@@ -345,9 +345,13 @@ function setProg(name) { PROG = PROGS[name] || PROGS.Off; }
 let PROG_OFF = 0;                            /* a loop shorter than 4 bars: the bar of the progression it starts on */
 function setProgOff(n) { PROG_OFF = n & 3; }
 function chordAt(i) { const c = PROG[((i >> 4) + PROG_OFF) & 3]; return Array.isArray(c) ? c[(i & 15) < 8 ? 0 : 1] : c; }
-/* SCALE: the patterns are written in A natural minor; another scale moves each scale step onto its own (Hijaz:
- * B -> Bb, C -> C#, the half step and step-and-a-half of its first jins), notes off the scale left as they are */
-const SCALES = {Minor: [0, 2, 3, 5, 7, 8, 10], Hijaz: [0, 1, 4, 5, 7, 8, 10]};
+/* SCALE: the patterns are written in A natural minor; another scale moves each scale step onto its own (Major:
+ * C -> C#, F -> F#, G -> G#), notes off the scale left as they are. All seven-note, so a pattern keeps its shape. */
+const SCALES = {
+  "Minor": [0, 2, 3, 5, 7, 8, 10], "Major": [0, 2, 4, 5, 7, 9, 11], "Dorian": [0, 2, 3, 5, 7, 9, 10],
+  "Phrygian": [0, 1, 3, 5, 7, 8, 10], "Lydian": [0, 2, 4, 6, 7, 9, 11], "Mixolydian": [0, 2, 4, 5, 7, 9, 10],
+  "Locrian": [0, 1, 3, 5, 6, 8, 10], "Harmonic minor": [0, 2, 3, 5, 7, 8, 11], "Melodic minor": [0, 2, 3, 5, 7, 9, 11]
+};
 let SC = SCALES.Minor;
 function setScale(name) { SC = SCALES[name] || SCALES.Minor; }
 function toScale(m) { const pc = ((m - 9) % 12 + 12) % 12, k = MINOR.indexOf(pc); return k >= 0 ? m + SC[k] - MINOR[k] : m; }
