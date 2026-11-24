@@ -64,7 +64,7 @@ select{background:var(--cap);color:#22150b;padding:0 10px}
 .cell.beat{background:#ffffff22}
 .cell.on{background:var(--glow)}.cell.on.cl{background:var(--pink)}
 .cell.tie{background:#ffad6b77;border-radius:0 3px 3px 0}
-.cell.ph::after{content:"";position:absolute;inset:-2px;border-radius:4px;box-shadow:0 0 0 2px #fff}
+.cell.ph::after{content:"";position:absolute;inset:0;border-radius:3px;box-shadow:inset 0 0 0 2px #fff}
 .mel .cell{height:52px}
 .cell .nn{position:absolute;inset:0;font:8px Silkscreen,monospace;color:#22150b;display:flex;align-items:center;justify-content:center;overflow:hidden}
 .panel{margin-top:16px;padding:12px;border-radius:16px;background:#ffffff0d}
@@ -123,7 +123,7 @@ select,input[type=text]{background:var(--cream);color:#231c14;border-radius:3px}
 .lane[data-t="0"] .cell.on.cl{background:var(--mustard)}
 .cell.tie{background:color-mix(in srgb,var(--acc) 55%,#3a3733)}
 .cell .nn{color:#1b1a18;font-family:"Share Tech Mono",monospace}
-.cell.ph::after{box-shadow:0 0 0 2px var(--cream)}
+.cell.ph::after{box-shadow:inset 0 0 0 2px var(--cream)}
 .cell.roll{background-image:repeating-linear-gradient(90deg,#1b1a18 0 2px,transparent 2px 5px)}
 .cell .rn{color:#1b1a18;text-shadow:none}
 .lh .b button.kb.on,.lh .b button.steps.on{background:var(--acc);color:#1b1a18;box-shadow:inset 0 2px 0 #0004}
@@ -153,7 +153,7 @@ pre{background:#ece2c8;color:#231c14;box-shadow:inset 0 0 0 1px #b9aa88;border-r
     </div>
     <div class="ctl">
       <div class="row"><button id="play">Play</button><label class="bpm">Tempo <input id="bpm" type="range" min="90" max="160" value="124"><span id="bpmv">124</span></label></div>
-      <div class="row"><label class="bpm" style="flex:0 1 auto">Key <select id="key" aria-label="Key"></select></label></div>
+      <div class="row"><label class="bpm" style="flex:0 1 auto">Key <select id="key" aria-label="Key"></select></label><label class="bpm" style="flex:0 1 auto">Progression <select id="prog" aria-label="Chord progression"></select></label></div>
       <div class="row secs" id="secs"></div>
       <p class="note" style="margin:0;color:#cfe5d4">Scenes bring lanes in and out. Song plays Intro, Build, Full, Break, each for 4 bars. Tap a scene to queue it for the next bar.</p>
     </div>
@@ -196,17 +196,17 @@ const ROLLS = [null, [2, 1, 96, 112], [3, 1, 80, 110], [4, 2, 50, 120], [6, 2, 1
 /* LANE PRESETS: each lane's sound and one-bar pattern; every scene shares the four lanes (an edit shows everywhere) */
 const preset = [0, 1, 0, 0];
 const P = t => I.LANE[KINDS[t]][preset[t]];
-const laneSteps = [0, 1, 2, 3].map(t => P(t).steps().map(cp)), laneOrig = laneSteps.map(a => a.map(cp));
+const laneSteps = [0, 1, 2, 3].map(t => I.to64(P(t).steps()).map(cp)), laneOrig = laneSteps.map(a => a.map(cp));
 const pat = I.SCENES.map(() => laneSteps), orig = I.SCENES.map(() => laneOrig);
 function setPreset(t, k) {
   preset[t] = k; const p = P(t);
-  laneSteps[t] = p.steps().map(cp); laneOrig[t] = laneSteps[t].map(cp);
+  laneSteps[t] = I.to64(p.steps()).map(cp); laneOrig[t] = laneSteps[t].map(cp);
   ensureSound(t, p.sound, true); writeTrack(t);
   if (t === 0 && p.bpm) { $("bpm").value = p.bpm; $("bpm").dispatchEvent(new Event("input")); }
   buildLanes(); if (t === sel) buildSound();
 }
 const scopeBuf = new Float32Array(2048); let scopePos = 0;
-const ENUMS2 = {CST: ["ALL", "FLAM", "TRIPLET", "RATCHET"], DMODE: ["TRIGGER", "COMP"], DON: ["ALL", "BEATS"], DEV: ["ALL", "2ND", "4TH"], WR: ["4 BARS", "2 BARS", "1 BAR", "1/2", "1/4"],
+const ENUMS2 = {CST: ["ALL", "FLAM", "TRIPLET", "RATCHET"], DMODE: ["TRIGGER", "COMP"], DKEY: ["DRUMS", "GHOST"], DON: ["ALL", "BEATS"], DEV: ["ALL", "2ND", "4TH"], WR: ["4 BARS", "2 BARS", "1 BAR", "1/2", "1/4"],
   ARATE: ["1/8", "1/16", "1/32", "16T", "8T"]};
 const warp = {depth: 30, rate: 2};        /* the bass's cutoff warp: LFO -> filter, synced (rate: index into WR) */
 const dlp = {cut: 127, res: 0};           /* the drum lane's low pass (127: open, bypassed) */
@@ -221,7 +221,7 @@ function applyArpSync() {                 /* the pattern's steps and the held-ke
   const d = ARATE_DIV[arpSync.rate];
   w.w_tset(2, ID.P_SDIV, d); w.w_tset(2, ID.P_ARATE, d); w.w_tset(2, ID.P_SGATE, arpSync.gate); w.w_tset(2, ID.P_AGATE, arpSync.gate);
 }
-const fxState = {chaos: I.SONG.chaos[0], cstyle: I.SONG.chaos[1], comp: I.SONG.duckComp[0], thresh: I.SONG.duckComp[1], duckOn: I.SONG.duckMode[0], duckEvery: [1, 2, 4].indexOf(I.SONG.duckMode[1]), duckRel: I.SONG.duckRel, wet: I.SONG.clap[0], feed: I.SONG.clap[1], swell: I.SONG.clap[2], every: [1, 2, 4, 8].indexOf(I.SONG.clap[3]), duck: I.SONG.duck.slice()};
+const fxState = {chaos: I.SONG.chaos[0], cstyle: I.SONG.chaos[1], comp: I.SONG.duckComp[0], ghost: 0, thresh: I.SONG.duckComp[1], duckOn: I.SONG.duckMode[0], duckEvery: [1, 2, 4].indexOf(I.SONG.duckMode[1]), duckRel: I.SONG.duckRel, wet: I.SONG.clap[0], feed: I.SONG.clap[1], swell: I.SONG.clap[2], every: [1, 2, 4, 8].indexOf(I.SONG.clap[3]), duck: I.SONG.duck.slice()};
 
 async function load() {
   const bin = Uint8Array.from(atob(WASM_GZ), c => c.charCodeAt(0));
@@ -246,7 +246,7 @@ function ensureSound(t, name, force) {
 }
 function writeTrack(t) {
   const on = stepsOn[t] && I.SCENES[cur].on[t];
-  I.writeSteps(w, t, on ? laneSteps[t] : new Array(16).fill(null), t === 2 ? arpSync.gate : P(t).gate || (t === 1 ? 70 : 64));
+  I.writeSteps(w, t, on ? laneSteps[t] : new Array(64).fill(null), t === 2 ? arpSync.gate : P(t).gate || (t === 1 ? 70 : 64));
   if (t === 2) applyArpSync();
 }
 function loadSection(s, force) {
@@ -272,11 +272,10 @@ function refreshSecs() {
   for (let t = 0; t < 4; t++) { const l = document.querySelector(`.lane[data-t="${t}"] .t .kv`); if (l) l.textContent = I.SCENES[cur].on[t] ? "" : "OUT"; }
 }
 let reps = 0;
-function onBoundary() {          /* the bar's last step: the next bar (in Song each scene plays 4 bars) */
+function onBoundary(idx) {       /* a bar's last step: a queued scene comes in on the next bar; Song moves every 4 bars */
   let next = cur;
-  if (queued === null && songMode && ++reps % 4) return;
   if (queued !== null) { next = queued; queued = null; }
-  else if (songMode) { arrPos = (arrPos + 1) % I.SCENE_SONG.length; next = I.SCENE_SONG[arrPos]; }
+  else if (songMode && idx === 63) { arrPos = (arrPos + 1) % I.SCENE_SONG.length; next = I.SCENE_SONG[arrPos]; }
   if (next !== cur) { loadSection(next); requestAnimationFrame(refreshSecs); }
 }
 
@@ -311,6 +310,7 @@ let FXK = [];
 function buildFx() {
   FXK = [
     knob("f_dmode", "DUCK MODE", 0, 1, () => fxState.comp, v => { fxState.comp = v; pushComp(); }, {e: "DMODE"}),
+    knob("f_dkey", "DUCK KEY", 0, 1, () => fxState.ghost, v => { fxState.ghost = v; w.w_duckghost(v); }, {e: "DKEY"}),
     knob("f_thr", "THRESH", 0, 127, () => fxState.thresh, v => { fxState.thresh = v; pushComp(); }, {fmt: v => Math.round(-48 + 48 * v / 127) + " dB"}),
     knob("f_don", "DUCK ON", 0, 1, () => fxState.duckOn, v => { fxState.duckOn = v; pushDuck(); }, {e: "DON"}),
     knob("f_dev", "DUCK EVERY", 0, 2, () => fxState.duckEvery, v => { fxState.duckEvery = v; pushDuck(); }, {e: "DEV"}),
@@ -334,7 +334,7 @@ function pushClap() { w.w_clap(fxState.wet, fxState.feed, fxState.swell, [1, 2, 
 const DROWS = [["KICK", [36]], ["CLAP", [39, 38]], ["HAT", [42]], ["OPEN", [46]], ["TOM", [45, 47, 50]], ["BELL", [56]]];   /* BELL: GM 56, the kit's bell voice (no kit has a true cowbell) */
 const PC = ["C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"];
 const nn = n => PC[n % 12] + (Math.floor(n / 12) - 1);
-const LENP = () => 16;
+const LENP = () => 64;
 let laneKnobs = [];
 /* LIVE: what a held key does on a melodic lane (the lane's arpeggiator and chord keys; the steps are untouched) */
 const LIVE = {
@@ -402,7 +402,7 @@ function buildLanes() {
         <div class="b"><button class="latch${latch[t] ? " on" : ""}" data-t="${t}" aria-pressed="${latch[t]}">Latch</button><button class="steps${stepsOn[t] ? " on" : ""}" data-t="${t}" aria-pressed="${stepsOn[t]}">Steps</button></div>` : ""}
         <div class="b"><button class="kb${t === sel ? " on" : ""}" data-t="${t}">Keys</button><button class="mute${mutes[t] ? " on" : ""}" data-t="${t}" aria-pressed="${!!mutes[t]}">Mute</button><button class="solo${solos[t] ? " on" : ""}" data-t="${t}" aria-pressed="${!!solos[t]}">Solo</button></div>
         <div class="mini">${t && t !== 2 ? knobHtml(K.dk) : ""}${knobHtml(K.lv)}${knobHtml(K.cr)}</div>${t === 1 ? `<div class="mini">${knobHtml(K.wp)}${knobHtml(K.wr)}</div>` : ""}${t === 0 ? `<div class="mini">${knobHtml(K.lp)}${knobHtml(K.lr)}</div>` : ""}${t === 2 ? `<div class="mini">${knobHtml(K.ar)}${knobHtml(K.ag)}</div>` : ""}</div>
-      <div class="gridwrap"${stepsOn[t] ? "" : ' style="opacity:.35"'}><div class="grid ${t ? "mel" : ""}" id="g${t}" style="grid-template-columns:34px repeat(${LENP()},minmax(11px,1fr));min-width:${LENP() === 16 ? 320 : 780}px">${gridHtml(t)}</div></div></div>`;
+      <div class="gridwrap"${stepsOn[t] ? "" : ' style="opacity:.35"'}><div class="grid ${t ? "mel" : ""}" id="g${t}" style="grid-template-columns:34px repeat(${LENP()},minmax(8px,1fr));min-width:${LENP() === 16 ? 320 : 600}px">${gridHtml(t)}</div></div></div>`;
   }).join("");
   laneKnobs.forEach(bindKnob);
   for (const s of $("lanes").querySelectorAll("select[data-t]")) s.addEventListener("change", () => {
@@ -443,7 +443,7 @@ function gridHtml(t) {
   }).join("")).join("");
   return `<div class="rl">${st.some(v => Array.isArray(v) && v.length > 1) ? "CHRD" : "NOTE"}</div>` + st.map((v, i) => {
     const tie = (v === "tie" || v === "tieS"), on = v != null && !tie, n = on ? (Array.isArray(v) ? v[0] : v) : 0;
-    return `<div class="${cls(i)}${on ? " on" : tie ? " tie" : ""}" data-i="${i}" tabindex="-1" aria-label="step ${i + 1}">${on ? `<span class="nn">${nn(n + keyShift).replace(/-?\d/, "")}</span>` : ""}</div>`;
+    return `<div class="${cls(i)}${on ? " on" : tie ? " tie" : ""}" data-i="${i}" tabindex="-1" aria-label="step ${i + 1}">${on ? `<span class="nn">${nn(I.noteAt(n, i) + keyShift).replace(/-?\d/, "")}</span>` : ""}</div>`;
   }).join("");
 }
 function toggle(t, i, r) {
@@ -473,6 +473,7 @@ function playheads() {
     if (idx >= 0) for (const c of g.querySelectorAll(`[data-i="${idx}"]`)) c.classList.add("ph");
     lastPh[t] = idx;
   }
+  const bar = playing ? w.w_seqidx(1) >> 4 : -1; if (bar !== progBar) { progBar = bar; status2(); }
 }
 
 /* ---- the selected track's sound ---- */
@@ -559,7 +560,7 @@ function start() {
   node.onaudioprocess = ev => {
     const L = ev.outputBuffer.getChannelData(0), R = ev.outputBuffer.getChannelData(1);
     for (let off = 0; off < L.length; off += 128) {
-      if (playing) { const idx = w.w_seqidx(0), last = LENP() - 1; if (idx === last && lastIdx !== last) onBoundary(); lastIdx = idx; }
+      if (playing) { const idx = w.w_seqidx(0); if ((idx & 15) === 15 && idx !== lastIdx) onBoundary(idx); lastIdx = idx; }
       riseTick(128);
       const f = new Float32Array(w.memory.buffer, w.w_render(128), 256);
       for (let i = 0; i < 128; i++) { L[off + i] = f[2 * i]; R[off + i] = f[2 * i + 1]; scopeBuf[scopePos++ & 2047] = (f[2 * i] + f[2 * i + 1]) * 0.5; }
@@ -571,14 +572,17 @@ function start() {
 function togglePlay() {
   start(); if (ctx && ctx.state !== "running") ctx.resume();
   playing = !playing;
-  if (playing) { if (songMode) { arrPos = I.SCENE_SONG.indexOf(cur); if (arrPos < 0) arrPos = 0; } reps = 0; lastIdx = -1; w.w_transport(3); }
+  if (playing) { if (songMode) { arrPos = I.SCENE_SONG.indexOf(cur); if (arrPos < 0) arrPos = 0; } lastIdx = -1; w.w_transport(3); }
   else w.w_transport(2);
   $("play").textContent = playing ? "Stop" : "Play"; $("play").classList.toggle("on", playing);
 }
 $("play").addEventListener("click", togglePlay);
 const KEYS = ["C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"];
 let keyShift = 0;
-function status2() { $("bpmv2").textContent = $("bpm").value + " BPM · " + KEYS[(9 + keyShift + 12) % 12] + " MINOR"; }
+let progBar = -1;
+function status2() { $("bpmv2").textContent = $("bpm").value + " BPM · " + KEYS[(9 + keyShift + 12) % 12] + " MINOR" + ($("prog").selectedIndex > 0 ? "  ·  " + I.progNames(keyShift).map((c, i) => i === progBar ? "[" + c + "]" : c).join(" ") : ""); }
+$("prog").innerHTML = Object.keys(I.PROGS).map((k, i) => `<option value="${i}">${k}</option>`).join("");
+$("prog").addEventListener("change", () => { I.setProg(Object.keys(I.PROGS)[+$("prog").value]); for (let t = 1; t < 4; t++) { writeTrack(t); $("g" + t).innerHTML = gridHtml(t); } lastPh = []; status2(); });
 $("key").innerHTML = KEYS.map((k, i) => `<option value="${i}"${i === 9 ? " selected" : ""}>${k} minor</option>`).join("");
 $("key").addEventListener("change", () => {            /* the song is in A minor: move the melodic tracks, never the drums */
   let d = (+$("key").value - 9 + 12) % 12; if (d > 6) d -= 12; keyShift = d;

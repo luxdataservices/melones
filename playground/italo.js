@@ -198,20 +198,20 @@ function bar1986() {
 /* "Trap": half-time (snare + clap on beat 3), kick 1, the & of 2, the & of 3; 8th hats with rolls:
  * roll = [hits, over steps, first velocity, last velocity] (drumfx.c plays the hits between the steps) */
 function roll(a, r) { a.roll = r; return a; }
-function trapBar() {
+function trapBar() {                    /* steady 8th hats; every roll ends before the next hat */
   const s = [];
-  for (let b = 1; b <= 16; b++) {
+  for (let i = 0; i < 16; i++) {
     const n = [];
-    if (b === 1 || b === 7 || b === 11) n.push(K);
-    if (b === 9) n.push(SN, CL);
-    if (b === 15) n.push(HO); else if (b % 2 === 1 || [4, 8, 13, 16].includes(b)) n.push(HC);
+    if (i === 0 || i === 6 || i === 10) n.push(K);
+    if (i === 8) n.push(SN, CL);
+    if (i === 14) n.push(HO); else if (i % 2 === 0 || i === 3) n.push(HC);
     let v = n;
-    if (b === 3) v = roll(n, [2, 1, 96, 112]);           /* a 32nd double */
-    if (b === 6) v = roll([HC], [3, 1, 70, 104]);        /* a quick triple */
-    if (b === 8) v = roll(n, [4, 2, 50, 118]);           /* 32nds fading in */
-    if (b === 13) v = roll(n, [6, 2, 118, 40]);          /* 32nd triplets fading out */
-    if (b === 16) v = roll([HC, SN], [4, 1, 40, 100]);   /* a snare and hat swell into the bar */
-    s.push(b === 9 ? acc(v) : v);
+    if (i === 3) v = roll(n, [2, 1, 90, 112]);            /* a 32nd double into beat 2 */
+    if (i === 5) v = roll([HC], [3, 1, 70, 104]);         /* a 16th triplet */
+    if (i === 10) v = roll(n, [2, 1, 96, 112]);           /* 32nds on the & of 3 */
+    if (i === 12) v = roll(n, [6, 2, 118, 40]);           /* 32nd triplets fading out over two steps */
+    if (i === 15) v = roll([HC, SN], [4, 1, 40, 100]);    /* a snare and hat swell into the bar */
+    s.push(i === 8 ? acc(v) : v);
   }
   return s;
 }
@@ -296,9 +296,40 @@ function tuneKick(w, t, s) {
   const tune = Math.round((s.E ? s.E[1] : 64) + (target - base) * 16 / 3);
   w.w_tset(t, ID.P_E0 + 1, Math.max(0, Math.min(127, tune)));
 }
-let LEN = 16;                         /* pattern length in steps: 16 (one bar of 4/4) or 64 (four bars) */
-function setLen(n) { LEN = n === 64 ? 64 : 16; }
+let LEN = 64;                         /* pattern length in steps: 64 (four bars of 4/4) or 16 (one bar) */
+function setLen(n) { LEN = n === 16 ? 16 : 64; }
+const to64 = a => Array.from({length: 64}, (_, i) => a[i % a.length]);   /* a 1- or 2-bar pattern over 4 bars */
 function setKey(k) { KEY = k | 0; }
+/* PROGRESSIONS: the melodic lanes walk a chord progression over the 4 bars, one chord a bar (a 5-chord one splits
+ * the last bar). Each chord moves the A minor patterns diatonically (steps along A natural minor, so Am's A-C-E
+ * becomes F-A-C on VI), the shortest way round; a major V raises G to G# (harmonic minor). Drums never move. */
+const I_ = {d: 0}, VI = {d: -2}, III = {d: 2}, VII = {d: -1}, V = {d: -3, maj: 1}, iv = {d: 3};
+const PROGS = {
+  "Off": [I_, I_, I_, I_],
+  "i–VI–III–VII (Am F C G)": [I_, VI, III, VII],
+  "i–VII–VI–V (Am G F E)": [I_, VII, VI, V],
+  "i–V–VI–III–iv (Am E F C Dm)": [I_, V, VI, [III, iv]],
+};
+const MINOR = [0, 2, 3, 5, 7, 8, 10];        /* A natural minor, semitones above A */
+let PROG = PROGS.Off;
+function setProg(name) { PROG = PROGS[name] || PROGS.Off; }
+function chordAt(i) { const c = PROG[(i >> 4) & 3]; return Array.isArray(c) ? c[(i & 15) < 8 ? 0 : 1] : c; }
+function chordMove(n, c) {                   /* a note of the A minor pattern, moved to chord c */
+  if (!c || (!c.d && !c.maj)) return n;
+  const r = n - 9, oct = Math.floor(r / 12), pc = r - 12 * oct;
+  let i = 6; while (MINOR[i] > pc) i--;      /* the scale note at or below (a chromatic note keeps its offset) */
+  const j = i + c.d, o2 = oct + Math.floor(j / 7), jj = ((j % 7) + 7) % 7;
+  let m = 9 + 12 * o2 + MINOR[jj] + (pc - MINOR[i]);
+  if (c.maj && jj === 6 && pc === MINOR[i]) m += 1;     /* major V: G -> G# */
+  return m;
+}
+const noteAt = (n, i) => chordMove(n, chordAt(i));
+function progNames(key) { return PROG.map(c => Array.isArray(c) ? c.map(x => chordName(x, key)).join("/") : chordName(c, key)); }
+function chordName(c, key) {                 /* "Am", "F", "E" ... in the current key */
+  const N = ["C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"];
+  const j = ((c.d % 7) + 7) % 7, root = (9 + key + MINOR[j] + 120) % 12;
+  return N[root] + ([0, 3, 4].includes(j) && !c.maj ? "m" : j === 1 ? "dim" : "");
+}
 function writeSteps(w, t, notes, gate) {
   const tr = t ? KEY : 0;               /* (the drums never move: their notes are the kit's drums) */
   w.w_tset(t, ID.P_SLEN, LEN);
@@ -307,7 +338,7 @@ function writeSteps(w, t, notes, gate) {
     const v = notes[i];
     if (v === "tie" || v === "tieS") { w.w_step(t, i, 0, 0, ID.ST_TIE, v === "tieS" ? 2 : 0, 0); continue; }   /* tieS: slide into the next */
     const a = v == null ? [] : Array.isArray(v) ? v : [v];
-    let p = 0; a.forEach((n, k) => { p |= Math.max(0, Math.min(127, n + tr)) << (8 * k); });
+    let p = 0; a.forEach((n, k) => { p |= Math.max(0, Math.min(127, (t ? noteAt(n, i) : n) + tr)) << (8 * k); });
     const ac = v && v.acc !== undefined ? v.acc : i % 16 === 0;
     if (t === 0 && w.w_roll) { const r = v && v.roll; w.w_roll(0, i, r ? r[0] : 0, r ? r[1] : 0, r ? r[2] : 0, r ? r[3] : 0); }
     w.w_step(t, i, a.length, p >>> 0, a.length ? ID.ST_NOTE : ID.ST_REST, (a.length && ac ? ID.SF_ACCENT : 0) | (v && v.slide ? 2 : 0), a.length ? (ac ? 112 : 96) : 0);
@@ -375,7 +406,7 @@ function miamiBar() {                       /* Miami bass: the 808's boom on 1, 
 const LANE = {
   drums: [
     {name: "Italo 4/4", sound: "SID DIGI KIT", steps: () => italoBar()},
-    {name: "Spacer", sound: "SID DIGI KIT", steps: () => spacerBar(1), bpm: 124},
+    {name: "Spacer", sound: "SID DIGI KIT", steps: () => [...spacerBar(0), ...spacerBar(1)], bpm: 124},
     {name: "1986", sound: "SIMMONS KIT", steps: () => bar1986(), bpm: 125},
     {name: "Miami Boom", sound: "808 BOOM", steps: () => miamiBar(), bpm: 126},
     {name: "Trap", sound: "808 KIT", steps: () => trapBar(), bpm: 140}
@@ -407,5 +438,5 @@ const SCENES = [
   {name: "Intro", on: [1, 1, 0, 0]}, {name: "Build", on: [1, 1, 1, 0]}, {name: "Full", on: [1, 1, 1, 1]}, {name: "Break", on: [0, 1, 1, 1]}
 ];
 const SCENE_SONG = [0, 1, 2, 2, 3, 2];     /* Song: each scene 4 bars */
-const ITALO = {LANE, SCENES, SCENE_SONG, ID, SOUNDS, SONG, CLAPS, BEATS, THEMES, setClaps, setBeat, setTheme, setKey, setLen, tuneKick, findSound, applySound, setupSong, loadSection, writeSteps, partSteps};
+const ITALO = {LANE, SCENES, SCENE_SONG, ID, SOUNDS, SONG, CLAPS, BEATS, THEMES, setClaps, setBeat, setTheme, setKey, setLen, to64, PROGS, setProg, progNames, noteAt, tuneKick, findSound, applySound, setupSong, loadSection, writeSteps, partSteps};
 if (typeof module !== "undefined") module.exports = ITALO;
