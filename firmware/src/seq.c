@@ -202,6 +202,12 @@ static uint32_t midi_map(const track_t *t, uint32_t note)
 #include "chord.c"
 
 /* ------------------------------------------------------------- arp --- */
+/* Melones ARP QUANTIZE (off by default): an arp started by a key while the song plays keeps to the song's grid. A key
+ * down within the first quarter of an arp step plays at once and the next notes fall back on the grid; a later one
+ * waits for the next grid line. (Stock: the arp counts its steps from the key.) */
+static uint8_t arp_quant;
+static uint32_t arp_qph[NTRK];                      /* the phase an at-once start keeps (samples into the step) */
+static uint32_t arp_grid_phase(uint32_t per);
 static void arp_add(track_t *t, uint32_t note)
 {
     uint32_t i;
@@ -216,6 +222,14 @@ static void arp_add(track_t *t, uint32_t note)
     if (t->nheld == 1u) {
         t->arp_pos = 0xFFFFFFF;                     /* fire on this block */
         t->arp_idx = 0xFFFFFFFFu;
+        arp_qph[t - trk] = 0;
+        if (arp_quant && song.playing) {            /* ARP QUANTIZE */
+            uint32_t per = seq_div_samples((uint32_t)t->p[P_ARATE]), ph = per ? arp_grid_phase(per) : 0;
+            if (ph < per / 4u)
+                arp_qph[t - trk] = ph;              /* just after a line: now, then on the grid */
+            else
+                t->arp_pos = ph;                    /* wait for the next line */
+        }
     }
 }
 
@@ -272,6 +286,12 @@ static uint32_t punch_clock_samples(void)
     uint32_t beat = beat_samples();
     return (uint32_t)((uint64_t)beat_pos * beat / MIDI_BEAT_UNITS);
 }
+static uint32_t arp_grid_phase(uint32_t per)        /* samples since the last arp grid line, by the first track's steps */
+{
+    const track_t *q = &trk[0];
+    uint32_t sp = seq_div_samples((uint32_t)q->p[P_SDIV]), pos = q->seq_pos >= 0x7FFFFFFFu ? 0u : q->seq_pos;
+    return ((uint32_t)q->seq_idx * sp + pos) % per;
+}
 /* destructive edits wait for a track's loop end while it plays (ui_input.c dq_poll): its loop ends so far; the banks one
  * waits to destroy; the tracks kept silent from a loop end until it is done (a UI frame that missed the last step) */
 static volatile uint16_t seq_loops[NTRK];
@@ -299,8 +319,10 @@ static void arp_step(track_t *t, uint32_t n, uint32_t gate_n)
     for (;;) {
         if (t->arp_pos < period + (uint32_t)((t->arp_idx & 1u) ? sw : -sw) && t->arp_pos != 0xFFFFFFF + n)
             return;
-        if (t->arp_pos >= 0xFFFFFFFu)
-            t->arp_pos = 0;
+        if (t->arp_pos >= 0xFFFFFFFu) {
+            t->arp_pos = arp_qph[t - trk] + n;      /* 0, or the grid phase it started at (ARP QUANTIZE) */
+            arp_qph[t - trk] = 0;
+        }
         else
             t->arp_pos -= period + (uint32_t)((t->arp_idx & 1u) ? sw : -sw);
         /* build the note list: held notes (sorted or as played) over OCT octaves */

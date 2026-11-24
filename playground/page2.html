@@ -211,12 +211,18 @@ function setPreset(t, k) {
   buildLanes(); if (t === sel) buildSound();
 }
 const scopeBuf = new Float32Array(2048); let scopePos = 0;
-const ENUMS2 = {CST: ["ALL", "FLAM", "TRIPLET", "RATCHET", "BEATREP"], DMODE: ["TRIGGER", "COMP"], DKEY: ["DRUMS", "GHOST"], DON: ["ALL", "BEATS"], DEV: ["ALL", "2ND", "4TH"], WR: ["4 BARS", "2 BARS", "1 BAR", "1/2", "1/4"],
+const ENUMS2 = {CST: ["ALL", "FLAM", "TRIPLET", "RATCHET", "BEATREP"], SWG: ["STRAIGHT", "52%", "54%", "56%", "MPC 58%", "60%", "62%", "64%", "TRIPLET", "DRUNK 70%"], LSW: ["FOLLOW", "STRAIGHT", "+ LIGHT", "+ MORE", "+ HEAVY"], DMODE: ["TRIGGER", "COMP"], DKEY: ["DRUMS", "GHOST"], DON: ["ALL", "BEATS"], DEV: ["ALL", "2ND", "4TH"], WR: ["4 BARS", "2 BARS", "1 BAR", "1/2", "1/4"],
   ARATE: ["1/8", "1/16", "1/32", "16T", "8T"]};
 const warp = {depth: 30, rate: 2};        /* the bass's cutoff warp: LFO -> filter, synced (rate: index into WR) */
 const dlp = {cut: 127, res: 0};           /* the drum lane's low pass (127: open, bypassed) */
 const cutRnd = [0, 0, 0, 0];              /* CUT RND per lane: each note draws a cutoff up to this far down */
-const arpSync = {rate: 1, gate: 40};      /* the arp lane's step rate against the song (index into ARATE) and gate */
+const arpSync = {rate: 1, gate: 40};
+/* SWING: the master knob's stops (the firmware's SWING units: the off-step lands swing/5 % late, 83 = triplet), each
+ * lane FOLLOWs it, plays STRAIGHT, or swings more; the lane's total goes to its step and held-key arp swing */
+const SWG_UNITS = [0, 10, 20, 30, 40, 50, 60, 70, 83, 100], LSW_ADD = [0, 0, 10, 20, 40];
+const swing = {g: 0, lane: [0, 0, 0, 0]};
+function laneSwing(t) { return swing.lane[t] === 1 ? 0 : Math.min(100, SWG_UNITS[swing.g] + LSW_ADD[swing.lane[t]]); }
+function applySwing() { w.w_gset(ID.G_SWING, 0); for (let t = 0; t < 4; t++) { w.w_tset(t, ID.P_SSWING, laneSwing(t)); w.w_tset(t, ID.P_ASWING, laneSwing(t)); } }      /* the arp lane's step rate against the song (index into ARATE) and gate */
 const ARATE_DIV = [1, 2, 3, 5, 4];        /* N_DIV: 1/8, 1/16, 1/32, 16T, 8T */
 function applyWarp() {
   w.w_tset(1, ID.P_LD_FLT, warp.depth); w.w_tset(1, ID.P_LSYNC, [1, 2, 3, 4, 5][warp.rate]);
@@ -234,6 +240,7 @@ async function load() {
   w = (await WebAssembly.instantiate(raw, {})).instance.exports;
   I.setLen(64);
   I.setupSong(w, {drums: P(0).sound, bass: P(1).sound, arp: P(2).sound, lead: P(3).sound});
+  w.w_arpquant(1); applySwing();
   loadSection(0, true); applyArpSync();
   buildFx(); buildLanes(); buildSecs(); buildKeys(); selectTrack(3);
 }
@@ -249,6 +256,7 @@ function ensureSound(t, name, force) {
   if (t && typeof keyShift !== "undefined") applyLive(t);
   if (t === 1) applyWarp();
   if (t === 2) applyArpSync();
+  w.w_tset(t, ID.P_SSWING, laneSwing(t)); w.w_tset(t, ID.P_ASWING, laneSwing(t));
 }
 function writeTrack(t) {
   const on = stepsOn[t] && I.SCENES[cur].on[t];
@@ -317,6 +325,7 @@ let FXK = [];
 function buildFx() {
   FXK = [
     knob("f_dmode", "DUCK MODE", 0, 1, () => fxState.comp, v => { fxState.comp = v; pushComp(); }, {e: "DMODE"}),
+    knob("f_swg", "SWING", 0, 9, () => swing.g, v => { swing.g = v; applySwing(); }, {e: "SWG"}),
     knob("f_dkey", "DUCK KEY", 0, 1, () => fxState.ghost, v => { fxState.ghost = v; w.w_duckghost(v); }, {e: "DKEY"}),
     knob("f_thr", "THRESH", 0, 127, () => fxState.thresh, v => { fxState.thresh = v; pushComp(); }, {fmt: v => Math.round(-48 + 48 * v / 127) + " dB"}),
     knob("f_don", "DUCK ON", 0, 1, () => fxState.duckOn, v => { fxState.duckOn = v; pushDuck(); }, {e: "DON"}),
@@ -401,14 +410,15 @@ function buildLanes() {
     if (t === 2) { K.ar = knob("ar2", "RATE", 0, 4, () => arpSync.rate, v => { arpSync.rate = v; applyArpSync(); }, {e: "ARATE"});
                    K.ag = knob("ag2", "GATE", 1, 127, () => arpSync.gate, v => { arpSync.gate = v; applyArpSync(); }); }
     K.cr = knob(`cr${t}`, "CUT RND", 0, 127, () => cutRnd[t], v => { cutRnd[t] = v; w.w_lpchaos(t, v); });
-    if (t && t !== 2) laneKnobs.push(K.dk); laneKnobs.push(K.lv, K.cr); if (t === 1) laneKnobs.push(K.wp, K.wr); if (t === 0) laneKnobs.push(K.lp, K.lr); if (t === 2) laneKnobs.push(K.ar, K.ag);
+    K.sw = knob(`sw${t}`, "SWING", 0, 4, () => swing.lane[t], v => { swing.lane[t] = v; applySwing(); }, {e: "LSW"});
+    if (t && t !== 2) laneKnobs.push(K.dk); laneKnobs.push(K.lv, K.cr, K.sw); if (t === 1) laneKnobs.push(K.wp, K.wr); if (t === 0) laneKnobs.push(K.lp, K.lr); if (t === 2) laneKnobs.push(K.ar, K.ag);
     return `<div class="lane${t === sel ? " sel" : ""}" data-t="${t}">
       <div class="lh"><div class="t"><span>${NAMES[t]}</span><span class="kv">${I.SCENES[cur].on[t] ? "" : "OUT"}</span></div>
         <select data-t="${t}" aria-label="${NAMES[t]} preset">${opts}</select>
         ${t ? `<select class="live" data-l="${t}" aria-label="${NAMES[t]} live mode">${Object.keys(liveSet(t)).map(m => `<option${m === liveMode[t] ? " selected" : ""}>${m === "Off" ? "Held key: plain" : "Held key: " + m.toLowerCase()}</option>`).join("")}</select>
         <div class="b"><button class="latch${latch[t] ? " on" : ""}" data-t="${t}" aria-pressed="${latch[t]}">Latch</button><button class="steps${stepsOn[t] ? " on" : ""}" data-t="${t}" aria-pressed="${stepsOn[t]}">Steps</button></div>` : ""}
         <div class="b"><button class="kb${t === sel ? " on" : ""}" data-t="${t}">Keys</button><button class="mute${mutes[t] ? " on" : ""}" data-t="${t}" aria-pressed="${!!mutes[t]}">Mute</button><button class="solo${solos[t] ? " on" : ""}" data-t="${t}" aria-pressed="${!!solos[t]}">Solo</button></div>
-        <div class="mini">${t && t !== 2 ? knobHtml(K.dk) : ""}${knobHtml(K.lv)}${knobHtml(K.cr)}</div>${t === 1 ? `<div class="mini">${knobHtml(K.wp)}${knobHtml(K.wr)}</div>` : ""}${t === 0 ? `<div class="mini">${knobHtml(K.lp)}${knobHtml(K.lr)}</div>` : ""}${t === 2 ? `<div class="mini">${knobHtml(K.ar)}${knobHtml(K.ag)}</div>` : ""}</div>
+        <div class="mini">${t && t !== 2 ? knobHtml(K.dk) : ""}${knobHtml(K.lv)}${knobHtml(K.cr)}${knobHtml(K.sw)}</div>${t === 1 ? `<div class="mini">${knobHtml(K.wp)}${knobHtml(K.wr)}</div>` : ""}${t === 0 ? `<div class="mini">${knobHtml(K.lp)}${knobHtml(K.lr)}</div>` : ""}${t === 2 ? `<div class="mini">${knobHtml(K.ar)}${knobHtml(K.ag)}</div>` : ""}</div>
       <div class="gridwrap"${stepsOn[t] ? "" : ' style="opacity:.35"'}><div class="grid ${t ? "mel" : ""}" id="g${t}" style="grid-template-columns:34px repeat(${LENP()},minmax(8px,1fr));min-width:${LENP() === 16 ? 320 : 600}px">${gridHtml(t)}</div></div></div>`;
   }).join("");
   laneKnobs.forEach(bindKnob);

@@ -115,6 +115,7 @@ EXPORT("w_duckcount") uint32_t w_duckcount(void) { return duck.count; }
 EXPORT("w_duckcomp") void w_duckcomp(uint32_t on, uint32_t thresh) { duck.comp = (uint8_t)(on ? 1 : 0); duck.thresh = (uint8_t)(thresh & 127u); }
 EXPORT("w_duckghost") void w_duckghost(uint32_t on) { duck.ghost = (uint8_t)(on ? 1 : 0); duck.gidx = 0xFFu; }
 EXPORT("w_bellkeys") void w_bellkeys(uint32_t on) { drum_bell_keys = (uint8_t)(on ? 1 : 0); }
+EXPORT("w_arpquant") void w_arpquant(uint32_t on) { arp_quant = (uint8_t)(on ? 1 : 0); }
 EXPORT("w_duckfol") float w_duckfol(void) { return duck.fol; }
 EXPORT("w_chaos") void w_chaos(uint32_t amt, uint32_t style) { dfx.chaos = (uint8_t)(amt & 127u); dfx.style = (uint8_t)(style > 4u ? 0u : style); }
 EXPORT("w_roll") void w_roll(uint32_t t, uint32_t i, uint32_t count, uint32_t span, uint32_t v0, uint32_t v1, uint32_t only)
