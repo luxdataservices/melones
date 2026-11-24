@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Melones Italo</title>
+<title>MELONES</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Rubik:wght@400;500;700;800&family=Silkscreen&family=Barlow+Condensed:wght@500;600;700&family=Share+Tech+Mono&display=swap" rel="stylesheet">
 <style>
@@ -119,6 +119,7 @@ input[type=text]{font:16px Rubik,system-ui,sans-serif;min-height:44px;border-rad
 .k.blank{opacity:.18;pointer-events:none}
 .lane>.kpages{grid-column:1/-1;margin-top:2px}.lane{align-items:start}
 #fx,#snd{display:block}
+.tag{margin:-6px 0 12px;font:italic 600 16px "Barlow Condensed",sans-serif;letter-spacing:.04em;color:#7a2a1c}
 </style>
 <style>
 /* CRUMAR: a crusty late-70s Italian panel. Worn beige backdrop; black matte panel between walnut end cheeks;
@@ -176,7 +177,7 @@ pre{background:#ece2c8;color:#231c14;box-shadow:inset 0 0 0 1px #b9aa88;border-r
 </head>
 <body>
 <div class="band">
-<h1>Melones Italo</h1>
+<h1>MELONES</h1><p class="tag">melones make a da best chip background for all ur moods</p>
 <p class="lede" style="display:block">Four tracks of chiptune Italo disco, played by the Melones firmware code compiled for your browser: SID bass, arps and leads, SID, 808 and Simmons kits, kick sidechain compression and the INFINITY CLAP. Nothing here touches your FM-1.</p>
 <div id="err"></div>
 <div class="dev">
@@ -188,7 +189,7 @@ pre{background:#ece2c8;color:#231c14;box-shadow:inset 0 0 0 1px #b9aa88;border-r
     </div>
     <div class="ctl">
       <div class="row"><button id="play">Play</button><label class="bpm">Tempo <input id="bpm" type="range" min="60" max="160" value="124"><span id="bpmv">124</span></label></div>
-      <div class="row"><label class="bpm" style="flex:1 1 auto">Vibe <select id="vibe" aria-label="Vibe"></select></label><button id="dice" class="dice" aria-label="Randomize everything" title="Randomize">🎲</button><button id="evolve" class="dice evo" aria-pressed="false" title="Evolve: the dice nudges the track every 4 bars">EVOLVE</button><label class="bpm" style="flex:0 1 auto">Key <select id="key" aria-label="Root note"></select></label><label class="bpm" style="flex:0 1 auto">Scale <select id="scale" aria-label="Scale"></select></label><label class="bpm" style="flex:0 1 auto">Progression <select id="prog" aria-label="Chord progression"></select></label></div>
+      <div class="row"><label class="bpm" style="flex:1 1 auto">Vibe <select id="vibe" aria-label="Vibe"></select></label><button id="dice" class="dice" aria-label="Randomize everything" title="Randomize">🎲</button><button id="evolve" class="dice evo" aria-pressed="false" title="Evolve: the dice nudges the track every 4 bars">EVOLVE</button><label class="bpm" style="flex:0 1 auto">Key <select id="key" aria-label="Root note"></select></label><label class="bpm" style="flex:0 1 auto">Scale <select id="scale" aria-label="Scale"></select></label><button id="link" class="dice evo on" aria-pressed="true" title="Link: a progression brings its scale, a scale its progression">🔗 LINK</button><label class="bpm" style="flex:0 1 auto">Progression <select id="prog" aria-label="Chord progression"></select></label></div>
       <div class="row chips" id="chords" aria-live="polite"></div>
       <div class="row"><label class="bpm" style="flex:0 1 auto">Length <select id="len" aria-label="Pattern length"><option value="16">16 steps (1 bar)</option><option value="32">32 steps (2 bars)</option><option value="64" selected>64 steps (4 bars)</option></select></label></div>
       <p class="note" style="margin:0;color:#cfe5d4">Every pattern is written for 4 bars; a shorter length plays its first one or two. The progression keeps moving from loop to loop.</p>
@@ -214,7 +215,7 @@ pre{background:#ece2c8;color:#231c14;box-shadow:inset 0 0 0 1px #b9aa88;border-r
     <button class="act" id="copy">Copy sound</button> <span id="copied" class="note"></span>
   </div>
 </div>
-<p class="note">Engine: Melodee 1.6.1 (GPL-3.0) by Kerem Kilic, portions by Leo Kuroshita / Hügelton Instruments, with Melones' kick ducking and INFINITY CLAP. Sounds and song: Melones Italo pack.</p>
+<p class="note">Engine: Melodee 1.6.1 (GPL-3.0) by Kerem Kilic, portions by Leo Kuroshita / Hügelton Instruments, with Melones' kick ducking and INFINITY CLAP. Sounds and patterns: Melones.</p>
 </div>
 <script>
 %%ITALO%%
@@ -244,7 +245,8 @@ function setPreset(t, k) {
 const ENUMS2 = {CST: ["ALL", "FLAM", "TRIPLET", "RATCHET", "BEATREP"], SWG: ["STRAIGHT", "52%", "54%", "56%", "MPC 58%", "60%", "62%", "64%", "TRIPLET", "DRUNK 70%"], LSW: ["FOLLOW", "STRAIGHT", "+ LIGHT", "+ MORE", "+ HEAVY"], LSY: ["FREE", "4 BAR", "2 BAR", "1/1", "1/2", "1/4", "1/8", "1/8T", "1/16", "1/16T", "1/32"], LTG: ["PER NOTE", "ON BEAT"], DMODE: ["TRIGGER", "COMP"], DKEY: ["DRUMS", "GHOST"], DON: ["ALL", "BEATS"], DEV: ["ALL", "2ND", "4TH"], WR: ["4 BARS", "2 BARS", "1 BAR", "1/2", "1/4"],
   ARATE: ["1/8", "1/16", "1/32", "16T", "8T"]};
 const warp = {depth: 30, rate: 2};        /* the bass's cutoff warp: LFO -> filter, synced (rate: index into WR) */
-const dlp = {cut: 127, res: 0};           /* the drum lane's low pass (127: open, bypassed) */
+const dlp = {cut: 127, res: 0, hi: 127};   /* HIGHS: the drum lane's high shelf, 127 flat */
+let lastDrumPat = "";           /* the drum lane's low pass (127: open, bypassed) */
 const cutRnd = [0, 0, 0, 0];              /* CUT RND per lane: each note draws a cutoff up to this far down */
 const arpSync = {rate: 1, gate: 40};
 /* SWING: the master knob's stops (the firmware's SWING units: the off-step lands swing/5 % late, 83 = triplet), each
@@ -291,6 +293,10 @@ function ensureSound(t, name, force) {
   w.w_tset(t, ID.P_SSWING, laneSwing(t)); w.w_tset(t, ID.P_ASWING, laneSwing(t));
 }
 function writeTrack(t) {
+  if (t === 0 && P(0).name !== lastDrumPat) {   /* cymbal-heavy styles tame the highs: jazz about -12 dB, rock -4 dB */
+    lastDrumPat = P(0).name; dlp.hi = /-jz-/.test(lastDrumPat) ? 48 : /-rk-/.test(lastDrumPat) ? 96 : 127; w.w_highs(0, dlp.hi);
+    const k = laneKnobs.find(x => x.id === "hi0"); if (k) showKnob(k);
+  }
   const on = stepsOn[t] && I.SCENES[cur].on[t];
   I.writeSteps(w, t, on ? laneSteps[t] : new Array(64).fill(null), t === 2 ? arpSync.gate : P(t).gate || (t === 1 ? 70 : 64));
   if (t === 2) applyArpSync();
@@ -328,7 +334,7 @@ function evolve() {
       const n = pick(pool); ensureSound(t, n, true); if (t === 2) applyArpSync(); said.push(n);
       if (t === sel) buildSound();
     } else if (what === "prog") {
-      const pool = (r ? r.prog : Object.keys(I.PROGS).filter(k => k !== "Off")).filter(k => k !== Object.keys(I.PROGS)[+$("prog").value]);
+      const pool = (r ? r.prog : Object.keys(I.PROGS).filter(k => k !== "Off")).filter(k => k !== progName() && linkedFits(k, r ? r.scale : null));
       if (!pool.length) continue;
       const n = pick(pool); $("prog").value = String(Object.keys(I.PROGS).indexOf(n)); $("prog").dispatchEvent(new Event("change")); said.push(n);
     } else if (what === "swing") {
@@ -491,13 +497,14 @@ function buildLanes() {
     /* one filter a lane, CUTOFF and RESO: the drums' own lowpass; the synth's filter on the others */
     if (t === 0) { K.cu = knob("cu0", "CUTOFF", 0, 127, () => dlp.cut, v => { dlp.cut = v; w.w_lp(0, dlp.cut, dlp.res); }, {fmt: v => v >= 127 ? "OPEN" : String(v)});
                    K.rs = knob("rs0", "RESO", 0, 127, () => dlp.res, v => { dlp.res = v; w.w_lp(0, dlp.cut, dlp.res); });
-                   K.tu = pk("tu0", "TUNE", ID.P_E0 + 1, 0, 127); K.to = pk("to0", "TONE", ID.P_E0 + 2, 0, 127); }
+                   K.tu = pk("tu0", "TUNE", ID.P_E0 + 1, 0, 127); K.to = pk("to0", "TONE", ID.P_E0 + 2, 0, 127);
+                   K.hi = knob("hi0", "HIGHS", 0, 127, () => dlp.hi, v => { dlp.hi = v; w.w_highs(0, v); }, {fmt: v => v >= 127 ? "FLAT" : (20 * Math.log10(0.125 + 0.875 * (v / 127) ** 2)).toFixed(1) + " dB"}); }
     else { K.cu = pk(`cu${t}`, "CUTOFF", ID.P_E0 + 4, 0, 127); K.rs = pk(`rs${t}`, "RESO", ID.P_E0 + 5, 0, 15); K.fe = pk(`fe${t}`, "FLT ENV", ID.P_ED_FLT, -64, 63); }
     if (t === 1) { K.wp = knob("wp1", "WARP", 0, 63, () => warp.depth, v => { warp.depth = v; applyWarp(); });
                    K.wr = knob("wr1", "RATE", 0, 4, () => warp.rate, v => { warp.rate = v; applyWarp(); }, {e: "WR"}); }
     if (t === 2) { K.ar = knob("ar2", "RATE", 0, 4, () => arpSync.rate, v => { arpSync.rate = v; applyArpSync(); }, {e: "ARATE"});
                    K.ag = knob("ag2", "GATE", 1, 127, () => arpSync.gate, v => { arpSync.gate = v; applyArpSync(); }); }
-    const PAGES = t === 0 ? [["MIX", [K.lv, K.sw, K.tu, K.to]], ["FILTER", [K.cu, K.rs, K.cr, null]]]
+    const PAGES = t === 0 ? [["MIX", [K.lv, K.sw, K.tu, K.to]], ["FILTER", [K.cu, K.rs, K.cr, K.hi]]]
       : t === 2 ? [["MIX", [K.lv, K.sw, K.ar, K.ag]], ["FILTER", [K.cu, K.rs, K.cr, K.fe]]]
       : [["MIX", [K.lv, K.dk, K.sw, null]], ["FILTER", [K.cu, K.rs, K.cr, K.fe]]].concat(t === 1 ? [["WARP", [K.wp, K.wr, null, null]]] : []);
     for (const [, ks] of PAGES) for (const k of ks) if (k) laneKnobs.push(k);
@@ -792,6 +799,18 @@ function kickToBar(bar) {          /* an 808 kick tuned to the key follows each 
   const kit = I.findSound(loaded[0]); if (kit && kit.KEYTUNE) I.tuneKick(w, 0, kit, I.chordRoot(bar * 16));
 }
 $("prog").innerHTML = Object.keys(I.PROGS).map((k, i) => `<option value="${i}">${I.MOODS[k] ? I.MOODS[k] + " " : ""}${k}</option>`).join("");
+/* LINK: a progression and the scale it's built for travel together (off: any with any) */
+const PROG_SCALE = {"i–VI–III–VII": "Minor", "i–V–VI–iv": "Major", "i–VII–VI–V": "Minor", "i–VI–VII–i": "Minor", "i–VI (vamp)": "Minor",
+  "i–VI–iv–V": "Harmonic minor", "i–V–VI–III–iv": "Minor", "i–IV–VI–V (Dorian)": "Dorian", "i–♭II (Phrygian)": "Phrygian",
+  "i–iv–♭II–V": "Minor", "i–III+–VI–V": "Minor", "i–♭vi–i–♭II": "Minor", "i–vii°–♭vi–V": "Minor", "i–♯iv°–iv–V": "Minor"};
+const SCALE_PROG = {"Minor": "i–VI–III–VII", "Major": "i–V–VI–iv", "Dorian": "i–IV–VI–V (Dorian)", "Phrygian": "i–♭II (Phrygian)",
+  "Lydian": "i–V–VI–iv", "Mixolydian": "i–VII–VI–V", "Locrian": "i–♭II (Phrygian)", "Harmonic minor": "i–VI–iv–V", "Melodic minor": "i–IV–VI–V (Dorian)"};
+let linkOn = true, linking = false;
+$("link").addEventListener("click", () => { linkOn = !linkOn; $("link").classList.toggle("on", linkOn); $("link").setAttribute("aria-pressed", linkOn); });
+const progName = () => Object.keys(I.PROGS)[+$("prog").value];
+function setSel(id, val) { linking = true; $(id).value = val; $(id).dispatchEvent(new Event("change")); linking = false; }
+const linkedFits = (prog, scales) => !linkOn || !scales || scales.includes(PROG_SCALE[prog]);
+$("prog").addEventListener("change", () => { if (linkOn && !linking && PROG_SCALE[progName()] && PROG_SCALE[progName()] !== $("scale").value) setSel("scale", PROG_SCALE[progName()]); });
 $("prog").addEventListener("change", () => { I.setProg(Object.keys(I.PROGS)[+$("prog").value]); progOff = 0; I.setProgOff(0); writeTrack(0); for (let t = 1; t < 4; t++) { writeTrack(t); $("g" + t).innerHTML = gridHtml(t); } lastPh = []; kickToBar(Math.max(0, progBar)); status2(); });
 /* VIBES: one tap sets the key, scale, chords, tempo, swing and all four lanes (then change anything) */
 const VIBES = {   /* the pick's starting point, then what the dice may choose from while the vibe stays */
@@ -833,8 +852,9 @@ $("dice").addEventListener("click", () => {     /* inside the picked vibe (its s
   const pick = a => a[Math.floor(Math.random() * a.length)], vb = VIBES[$("vibe").value], r = vb && vb.roll;
   const all = {scale: Object.keys(I.SCALES).filter(k => k !== "Locrian"), prog: Object.keys(I.PROGS).filter(k => k !== "Off")};
   const lanes = KINDS.map((k, t) => r ? pick(r.lanes[t]) : pick(I.LANE[k]).name);
-  const v = {key: Math.floor(Math.random() * 12), scale: pick(r ? r.scale : all.scale),
-    prog: r ? pick(r.prog) : Math.random() < 0.15 ? "Off" : pick(all.prog),
+  const progPool = (r ? r.prog : all.prog).filter(p => linkedFits(p, r ? r.scale : null)), prog = !r && Math.random() < 0.15 ? "Off" : pick(progPool.length ? progPool : (r ? r.prog : all.prog));
+  const v = {key: Math.floor(Math.random() * 12), scale: linkOn && PROG_SCALE[prog] ? PROG_SCALE[prog] : pick(r ? r.scale : all.scale),
+    prog,
     bpm: r ? r.bpm[0] + 2 * Math.floor(Math.random() * ((r.bpm[1] - r.bpm[0]) / 2 + 1)) : 112 + 2 * Math.floor(Math.random() * 15),
     swing: pick(r ? r.swing : [0, 0, 0, 1, 2, 4]), lanes,
     sounds: KINDS.map((k, t) => r ? (r.sounds[t] ? pick(r.sounds[t]) : I.LANE[k].find(p => p.name === lanes[t]).sound) : pick(I.SOUNDS[k]).name)};
@@ -849,8 +869,9 @@ function applyVibe(v) {
   v.lanes.forEach((name, t) => { const k = I.LANE[KINDS[t]].findIndex(p => p.name === name); if (k >= 0) { preset[t] = k; const p = P(t); laneSteps[t] = I.to64(p.steps()).map(cp); laneOrig[t] = laneSteps[t].map(cp); ensureSound(t, v.sounds ? v.sounds[t] : p.sound, true); writeTrack(t); } });
   buildLanes(); buildSound(); buildFx(); status2();
 }
-$("scale").innerHTML = Object.keys(I.SCALES).map(k => `<option>${k}</option>`).join("");
-$("scale").addEventListener("change", () => { I.setScale($("scale").value); for (let t = 0; t < 4; t++) { writeTrack(t); $("g" + t).innerHTML = gridHtml(t); } lastPh = []; status2(); if (manual.size) pushKeys(); });
+const SCALE_MOODS = {"Minor": "😢", "Major": "😊", "Dorian": "😎", "Phrygian": "😈", "Lydian": "😇", "Mixolydian": "😏", "Locrian": "😵", "Harmonic minor": "😨", "Melodic minor": "🤔"};
+$("scale").innerHTML = Object.keys(I.SCALES).map(k => `<option value="${k}">${SCALE_MOODS[k] || ""} ${k}</option>`).join("");
+$("scale").addEventListener("change", () => { I.setScale($("scale").value); if (linkOn && !linking && progName() !== "Off" && PROG_SCALE[progName()] !== $("scale").value) setSel("prog", String(Object.keys(I.PROGS).indexOf(SCALE_PROG[$("scale").value]))); for (let t = 0; t < 4; t++) { writeTrack(t); $("g" + t).innerHTML = gridHtml(t); } lastPh = []; status2(); if (manual.size) pushKeys(); });
 
 $("key").innerHTML = ROOTS.map((k, i) => `<option value="${i}"${i === 9 ? " selected" : ""}>${k} · ${SOLF[i]}</option>`).join("");
 $("key").addEventListener("change", () => {            /* the song is in A minor: move the melodic tracks, never the drums */

@@ -13,12 +13,20 @@ static struct {
     uint8_t cut[NPART], res[NPART];
     uint8_t chaos[NPART], off[NPART];          /* CUT RND, and this note's draw */
     float lo[NPART][2], bp[NPART][2];         /* the filter state, a pair for the SPREAD side */
-} plp = {.cut = {127, 127, 127, 127}};
+    uint8_t hi[NPART];          /* HIGHS: a high shelf at ~3 kHz, 127 flat .. 0 about -18 dB */
+    float hs[NPART][2];         /* its one-pole low-pass state (main, side) */
+} plp = {.cut = {127, 127, 127, 127}, .hi = {127, 127, 127, 127}};
 
 static inline __attribute__((always_inline)) void partlp_apply(uint32_t k, int32_t *b, uint32_t n, uint32_t side)
 {
     if (k >= NPART)
         return;
+    if (plp.hi[k] < 127u) {                    /* HIGHS: lows kept, what's above ~3 kHz turned down */
+        float g = (float)plp.hi[k] * (1.f / 127.f), a = 0.35f, z = plp.hs[k][side];
+        g = 0.125f + 0.875f * g * g;          /* 127 -> 0 dB, 64 -> -8 dB, 0 -> -18 dB */
+        for (uint32_t i = 0; i < n; i++) { float x = (float)b[i]; z += a * (x - z); b[i] = (int32_t)(z + g * (x - z)); }
+        plp.hs[k][side] = z;
+    }
     int32_t cut = (int32_t)plp.cut[k] - (int32_t)plp.off[k];
     if (cut >= 127)
         return;
