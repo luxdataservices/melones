@@ -222,9 +222,10 @@ static void dsk_hit(track_t *t, uint32_t note, uint32_t vel)
         return;
     role = drum_gm(t->p, note, &st);
     lane = DV_TYPE_LANE[role];
-    sound = drum_sound_of(t, note) & 15u;
+    sound = DRUM_BELL_NOTE(note) ? 10u : drum_sound_of(t, note) & 15u;   /* BELL KEYS: the kit's BELL (in RIDE's place) */
     pc = drum_patch_of(t - trk)->c[sound];
-    tune = clamp((st + pc[0] + drum_event_pitch) * 16 + (t->p[P_E1] - 64) * 3, -576, 576);
+    tune = DRUM_BELL_NOTE(note) ? clamp((st + pc[0] + drum_event_pitch) * 16 + DRUM_BELL_FINE, -576, 576)   /* BELL KEYS */
+         : clamp((st + pc[0] + drum_event_pitch) * 16 + (t->p[P_E1] - 64) * 3, -576, 576);
     K->quiet = 0;
     if (t->p[P_E6] && sound <= D9_SD) {
         K->dsmp = (uint8_t)sound;

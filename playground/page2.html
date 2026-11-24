@@ -83,6 +83,11 @@ input[type=text]{font:16px Rubik,system-ui,sans-serif;min-height:44px;border-rad
 #err{display:none;background:#5a1d12;color:#fff;padding:12px 14px;border-radius:12px;margin-bottom:14px}
 @media(max-width:820px){.top,.below{grid-template-columns:minmax(0,1fr)}.lane{grid-template-columns:minmax(0,1fr)}.lh{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);align-items:center}.lh .t{grid-column:1/-1}.key small{display:none}}
 @media(prefers-reduced-motion:reduce){*{transition:none!important}}
+.chips{display:flex;gap:6px;flex-wrap:wrap}.chips:empty{display:none}
+.chip{min-width:64px;padding:4px 10px;border-radius:3px;background:#2b2825;border:1px solid #4a4642;text-align:center;font-family:"Share Tech Mono",monospace;color:#9a948c}
+.chip b{display:block;font-family:"Barlow Condensed",sans-serif;font-size:13px;letter-spacing:.06em;color:#cfc7bb}.chip span{font-size:16px}
+.chip.lit{background:#5a1a12;border-color:#ff3b2a;color:#ff6a55;box-shadow:0 0 6px #ff3b2a66}.chip.lit b{color:#ffd9cf}
+.key.off{opacity:.35}
 </style>
 <style>
 /* CRUMAR: a crusty late-70s Italian panel. Worn beige backdrop; black matte panel between walnut end cheeks;
@@ -152,8 +157,9 @@ pre{background:#ece2c8;color:#231c14;box-shadow:inset 0 0 0 1px #b9aa88;border-r
       <div class="srow"><span id="bpmv2">124 BPM · A MINOR</span><span id="keysfor">KEYS: LEAD</span></div>
     </div>
     <div class="ctl">
-      <div class="row"><button id="play">Play</button><label class="bpm">Tempo <input id="bpm" type="range" min="90" max="160" value="124"><span id="bpmv">124</span></label></div>
-      <div class="row"><label class="bpm" style="flex:0 1 auto">Key <select id="key" aria-label="Key"></select></label><label class="bpm" style="flex:0 1 auto">Progression <select id="prog" aria-label="Chord progression"></select></label></div>
+      <div class="row"><button id="play">Play</button><label class="bpm">Tempo <input id="bpm" type="range" min="60" max="160" value="124"><span id="bpmv">124</span></label></div>
+      <div class="row"><label class="bpm" style="flex:0 1 auto">Key <select id="key" aria-label="Key"></select></label><label class="bpm" style="flex:0 1 auto">Progression <select id="prog" aria-label="Chord progression"></select></label><label class="bpm" style="flex:0 1 auto">Key lock <select id="lock" aria-label="Key lock"><option value="1">Chord</option><option value="2">Scale</option><option value="0">Off</option></select></label></div>
+      <div class="row chips" id="chords" aria-live="polite"></div>
       <div class="row secs" id="secs"></div>
       <p class="note" style="margin:0;color:#cfe5d4">Scenes bring lanes in and out. Song plays Intro, Build, Full, Break, each for 4 bars. Tap a scene to queue it for the next bar.</p>
     </div>
@@ -202,16 +208,15 @@ function setPreset(t, k) {
   preset[t] = k; const p = P(t);
   laneSteps[t] = I.to64(p.steps()).map(cp); laneOrig[t] = laneSteps[t].map(cp);
   ensureSound(t, p.sound, true); writeTrack(t);
-  if (t === 0 && p.bpm) { $("bpm").value = p.bpm; $("bpm").dispatchEvent(new Event("input")); }
   buildLanes(); if (t === sel) buildSound();
 }
 const scopeBuf = new Float32Array(2048); let scopePos = 0;
-const ENUMS2 = {CST: ["ALL", "FLAM", "TRIPLET", "RATCHET"], DMODE: ["TRIGGER", "COMP"], DKEY: ["DRUMS", "GHOST"], DON: ["ALL", "BEATS"], DEV: ["ALL", "2ND", "4TH"], WR: ["4 BARS", "2 BARS", "1 BAR", "1/2", "1/4"],
+const ENUMS2 = {CST: ["ALL", "FLAM", "TRIPLET", "RATCHET", "BEATREP"], DMODE: ["TRIGGER", "COMP"], DKEY: ["DRUMS", "GHOST"], DON: ["ALL", "BEATS"], DEV: ["ALL", "2ND", "4TH"], WR: ["4 BARS", "2 BARS", "1 BAR", "1/2", "1/4"],
   ARATE: ["1/8", "1/16", "1/32", "16T", "8T"]};
 const warp = {depth: 30, rate: 2};        /* the bass's cutoff warp: LFO -> filter, synced (rate: index into WR) */
 const dlp = {cut: 127, res: 0};           /* the drum lane's low pass (127: open, bypassed) */
 const cutRnd = [0, 0, 0, 0];              /* CUT RND per lane: each note draws a cutoff up to this far down */
-const arpSync = {rate: 1, gate: 64};      /* the arp lane's step rate against the song (index into ARATE) and gate */
+const arpSync = {rate: 1, gate: 40};      /* the arp lane's step rate against the song (index into ARATE) and gate */
 const ARATE_DIV = [1, 2, 3, 5, 4];        /* N_DIV: 1/8, 1/16, 1/32, 16T, 8T */
 function applyWarp() {
   w.w_tset(1, ID.P_LD_FLT, warp.depth); w.w_tset(1, ID.P_LSYNC, [1, 2, 3, 4, 5][warp.rate]);
@@ -240,6 +245,7 @@ let loaded = [];
 function ensureSound(t, name, force) {
   if (!force && loaded[t] === name) return;
   I.applySound(w, t, I.findSound(name)); loaded[t] = name;
+  if (t === 0) { const bk = !!I.findSound(name).KEYTUNE; I.setBellKeys(bk); w.w_bellkeys(bk ? 1 : 0); }
   if (t && typeof keyShift !== "undefined") applyLive(t);
   if (t === 1) applyWarp();
   if (t === 2) applyArpSync();
@@ -273,6 +279,7 @@ function refreshSecs() {
 }
 let reps = 0;
 function onBoundary(idx) {       /* a bar's last step: a queued scene comes in on the next bar; Song moves every 4 bars */
+  if ($("prog").selectedIndex > 0) kickToBar(((idx + 1) >> 4) & 3);
   let next = cur;
   if (queued !== null) { next = queued; queued = null; }
   else if (songMode && idx === 63) { arrPos = (arrPos + 1) % I.SCENE_SONG.length; next = I.SCENE_SONG[arrPos]; }
@@ -319,8 +326,8 @@ function buildFx() {
     knob("f_feed", "CLAP FEED", 0, 127, () => fxState.feed, v => { fxState.feed = v; pushClap(); }, {pink: 1}),
     knob("f_swell", "CLAP SWELL", 0, 127, () => fxState.swell, v => { fxState.swell = v; pushClap(); }, {pink: 1}),
     knob("f_every", "CLAP EVERY", 0, 3, () => fxState.every, v => { fxState.every = v; pushClap(); }, {pink: 1, e: "EVERY"}),
-    knob("f_chaos", "CLAP CHAOS", 0, 127, () => fxState.chaos, v => { fxState.chaos = v; pushChaos(); }, {pink: 1}),
-    knob("f_cst", "CHAOS STYLE", 0, 3, () => fxState.cstyle, v => { fxState.cstyle = v; pushChaos(); }, {pink: 1, e: "CST"})
+    knob("f_chaos", "CHAOS", 0, 127, () => fxState.chaos, v => { fxState.chaos = v; pushChaos(); }, {pink: 1}),
+    knob("f_cst", "CHAOS STYLE", 0, 4, () => fxState.cstyle, v => { fxState.cstyle = v; pushChaos(); }, {pink: 1, e: "CST"})
   ];
   $("fx").innerHTML = `<div class="grp">Master<span>sidechain compressor · INFINITY CLAP</span></div>` + FXK.map(knobHtml).join("");
   FXK.forEach(bindKnob);
@@ -331,7 +338,7 @@ function pushDuck() { w.w_duckmode(fxState.duckOn, [1, 2, 4][fxState.duckEvery])
 function pushClap() { w.w_clap(fxState.wet, fxState.feed, fxState.swell, [1, 2, 4, 8][fxState.every]); }
 
 /* ---- lanes ---- */
-const DROWS = [["KICK", [36]], ["CLAP", [39, 38]], ["HAT", [42]], ["OPEN", [46]], ["TOM", [45, 47, 50]], ["BELL", [56]]];   /* BELL: GM 56, the kit's bell voice (no kit has a true cowbell) */
+const DROWS = [["KICK", [36]], ["SNARE", [38, 40]], ["CLAP", [39]], ["HAT", [42]], ["OPEN", [46]], ["TOM", [45, 47, 50]], ["BELL", [56]]];   /* BELL: GM 56, the kit's bell voice (no kit has a true cowbell) */
 const PC = ["C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"];
 const nn = n => PC[n % 12] + (Math.floor(n / 12) - 1);
 const LENP = () => 64;
@@ -426,9 +433,10 @@ function buildLanes() {
   for (let t = 0; t < 4; t++) $("g" + t).addEventListener("click", e => {
     const c = e.target.closest(".cell"); if (!c) return;
     if (t === 0 && e.shiftKey) {                 /* shift-click a drum step: cycle its roll */
-      const i = +c.dataset.i, st = pat[cur][0]; if (!Array.isArray(st[i])) st[i] = [DROWS[+c.dataset.r][1][0]];
-      const k = ROLLS.findIndex(r => JSON.stringify(r) === JSON.stringify(st[i].roll || null));
-      const nx = ROLLS[(k + 1) % ROLLS.length]; if (nx) st[i].roll = nx.slice(); else delete st[i].roll;
+      const i = +c.dataset.i, st = pat[cur][0], row = DROWS[+c.dataset.r][1], v = Array.isArray(st[i]) ? st[i] : (st[i] = []);
+      let n = v.find(x => row.includes(x)); if (n === undefined) { n = DROWS[+c.dataset.r][0] === "TOM" ? 47 : row[0]; v.push(n); }
+      const mine = v.roll && v.roll[4] === n, k = mine ? ROLLS.findIndex(r => r && r[0] === v.roll[0] && r[1] === v.roll[1]) : 0;
+      const nx = ROLLS[(k + 1) % ROLLS.length]; if (nx) v.roll = nx.concat([n]); else delete v.roll;   /* one rolling row a step */
       writeTrack(0); $("g0").innerHTML = gridHtml(0); lastPh = []; return;
     }
     toggle(t, +c.dataset.i, c.dataset.r);
@@ -438,8 +446,8 @@ function gridHtml(t) {
   const st = pat[cur][t].slice(0, LENP());
   const cls = i => `cell${i % 16 === 0 && i ? " bar" : ""}${i % 4 === 0 ? " beat" : ""}`;
   if (t === 0) return DROWS.map(([nm, notes], r) => `<div class="rl">${nm}</div>` + st.map((v, i) => {
-    const on = Array.isArray(v) && v.some(n => notes.includes(n)), rl = on && v.roll ? v.roll[0] : 0;
-    return `<div class="${cls(i)}${on ? " on" + (r === 1 ? " cl" : "") : ""}${rl ? " roll" : ""}" data-i="${i}" data-r="${r}" tabindex="-1" aria-label="${nm} step ${i + 1}${rl ? ", roll of " + rl : ""}">${rl ? `<span class="rn">${rl}</span>` : ""}</div>`;
+    const on = Array.isArray(v) && v.some(n => notes.includes(n)), rl = on && v.roll && (!v.roll[4] || notes.includes(v.roll[4])) ? v.roll[0] : 0;
+    return `<div class="${cls(i)}${on ? " on" + (DROWS[r][0] === "CLAP" ? " cl" : "") : ""}${rl ? " roll" : ""}" data-i="${i}" data-r="${r}" tabindex="-1" aria-label="${nm} step ${i + 1}${rl ? ", roll of " + rl : ""}">${rl ? `<span class="rn">${rl}</span>` : ""}</div>`;
   }).join("")).join("");
   return `<div class="rl">${st.some(v => Array.isArray(v) && v.length > 1) ? "CHRD" : "NOTE"}</div>` + st.map((v, i) => {
     const tie = (v === "tie" || v === "tieS"), on = v != null && !tie, n = on ? (Array.isArray(v) ? v[0] : v) : 0;
@@ -451,7 +459,7 @@ function toggle(t, i, r) {
   if (t === 0) {
     const notes = DROWS[+r][1], v = Array.isArray(st[i]) ? st[i].slice() : [];
     const has = v.some(n => notes.includes(n));
-    let nv = has ? v.filter(n => !notes.includes(n)) : v.concat(+r === 4 ? [47] : +r === 5 ? [56] : notes);
+    let nv = has ? v.filter(n => !notes.includes(n)) : v.concat(DROWS[+r][0] === "TOM" ? [47] : [notes[0]]);
     st[i] = nv.length ? Object.assign(nv.slice(0, 4), st[i] && st[i].acc ? {acc: 1} : {}, st[i] && st[i].roll ? {roll: st[i].roll} : {}) : null;
   } else if (st[i] != null && !/^tie/.test(st[i])) {
     st[i] = null; for (let j = i + 1; j < 64 && /^tie/.test(st[j]); j++) st[j] = null;
@@ -463,7 +471,7 @@ function toggle(t, i, r) {
   }
   writeTrack(t); $("g" + t).innerHTML = gridHtml(t); lastPh = [];
 }
-let lastPh = [];
+let lastPh = [], lastHalf = -1;
 function playheads() {
   for (let t = 0; t < 4; t++) {
     const idx = playing ? w.w_seqidx(t) : -1;
@@ -474,12 +482,13 @@ function playheads() {
     lastPh[t] = idx;
   }
   const bar = playing ? w.w_seqidx(1) >> 4 : -1; if (bar !== progBar) { progBar = bar; status2(); }
+  const half = playing ? w.w_seqidx(1) >> 3 : -1; if (half !== lastHalf) { lastHalf = half; keyLock(); }
 }
 
 /* ---- the selected track's sound ---- */
 let SK = [];
 function selectTrack(t) {
-  sel = t; w.w_sel(t);
+  sel = t; w.w_sel(t); if (typeof keyLock === "function") keyLock();
   for (const l of document.querySelectorAll(".lane")) l.classList.toggle("sel", +l.dataset.t === t);
   for (const b of document.querySelectorAll("button.kb")) b.classList.toggle("on", +b.dataset.t === t);
   $("keysfor").textContent = "KEYS: " + NAMES[t].replace(" / PAD", "");
@@ -547,7 +556,12 @@ addEventListener("keydown", e => {
 });
 addEventListener("keyup", e => { const k = compKey(e); if (k >= 0 && k < 27) keyOff(k); });
 addEventListener("blur", () => { manual.clear(); pushKeys(); });
-function keyOn(k) { start(); manual.add(k); pushKeys(); }
+function keyOn(k) {               /* Key lock: a note outside the chord (or the scale) is ignored, on every melodic lane */
+  start();
+  const ok = I.allowedPcs(curStep(), sel === 0 ? 0 : lock);
+  if (ok && !ok.includes((k + 8) % 12)) return;   /* key k plays C + k - 7: (k + 8) % 12 above A */
+  manual.add(k); pushKeys();
+}
 function keyOff(k) { manual.delete(k); pushKeys(); }
 function pushKeys() { let m = 0; for (const k of manual) m |= 1 << k; if (w) w.w_keys(m >>> 0); for (const el of document.querySelectorAll(".key")) el.classList.toggle("on", !!(m & (1 << +el.dataset.k))); }
 
@@ -572,23 +586,37 @@ function start() {
 function togglePlay() {
   start(); if (ctx && ctx.state !== "running") ctx.resume();
   playing = !playing;
-  if (playing) { if (songMode) { arrPos = I.SCENE_SONG.indexOf(cur); if (arrPos < 0) arrPos = 0; } lastIdx = -1; w.w_transport(3); }
+  if (playing) { if (songMode) { arrPos = I.SCENE_SONG.indexOf(cur); if (arrPos < 0) arrPos = 0; } lastIdx = -1; if ($("prog").selectedIndex > 0) kickToBar(0); w.w_transport(3); }
   else w.w_transport(2);
   $("play").textContent = playing ? "Stop" : "Play"; $("play").classList.toggle("on", playing);
 }
 $("play").addEventListener("click", togglePlay);
 const KEYS = ["C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"];
 let keyShift = 0;
-let progBar = -1;
-function status2() { $("bpmv2").textContent = $("bpm").value + " BPM · " + KEYS[(9 + keyShift + 12) % 12] + " MINOR" + ($("prog").selectedIndex > 0 ? "  ·  " + I.progNames(keyShift).map((c, i) => i === progBar ? "[" + c + "]" : c).join(" ") : ""); }
+let progBar = -1, lock = 1;
+function status2() {
+  $("bpmv2").textContent = $("bpm").value + " BPM · " + KEYS[(9 + keyShift + 12) % 12] + " MINOR";
+  const on = $("prog").selectedIndex > 0, lit = progBar < 0 ? 0 : progBar;
+  $("chords").innerHTML = on ? I.progBars(keyShift).map((c, i) => `<div class="chip${i === lit ? " lit" : ""}"><b>${c.rn}</b><span>${c.name}</span></div>`).join("") : "";
+  keyLock();
+}
+function curStep() { return playing ? w.w_seqidx(sel || 1) : 0; }
+function keyLock() {               /* dim the keys a played note can't take now */
+  const ok = I.allowedPcs(curStep(), sel === 0 ? 0 : lock);
+  for (const el of document.querySelectorAll(".key")) el.classList.toggle("off", !!ok && !ok.includes((+el.dataset.k + 8) % 12));
+}
+function kickToBar(bar) {          /* an 808 kick tuned to the key follows each chord's root */
+  const kit = I.findSound(loaded[0]); if (kit && kit.KEYTUNE) I.tuneKick(w, 0, kit, I.chordRoot(bar * 16));
+}
 $("prog").innerHTML = Object.keys(I.PROGS).map((k, i) => `<option value="${i}">${k}</option>`).join("");
-$("prog").addEventListener("change", () => { I.setProg(Object.keys(I.PROGS)[+$("prog").value]); for (let t = 1; t < 4; t++) { writeTrack(t); $("g" + t).innerHTML = gridHtml(t); } lastPh = []; status2(); });
+$("prog").addEventListener("change", () => { I.setProg(Object.keys(I.PROGS)[+$("prog").value]); writeTrack(0); for (let t = 1; t < 4; t++) { writeTrack(t); $("g" + t).innerHTML = gridHtml(t); } lastPh = []; kickToBar(Math.max(0, progBar)); status2(); });
+$("lock").addEventListener("change", () => { lock = +$("lock").value; status2(); });
 $("key").innerHTML = KEYS.map((k, i) => `<option value="${i}"${i === 9 ? " selected" : ""}>${k} minor</option>`).join("");
 $("key").addEventListener("change", () => {            /* the song is in A minor: move the melodic tracks, never the drums */
   let d = (+$("key").value - 9 + 12) % 12; if (d > 6) d -= 12; keyShift = d;
   I.setKey(d);                                         /* the sequenced notes move ... */
-  for (let t = 1; t < 4; t++) { w.w_tset(t, ID.P_TRANS, d); writeTrack(t); applyLive(t); $("g" + t).innerHTML = gridHtml(t); }   /* ... and the keys play in the new key */
-  const kit = I.findSound(loaded[0]); if (kit && kit.KEYTUNE) I.tuneKick(w, 0, kit);                 /* an 808's kick follows the key */
+  for (let t = 1; t < 4; t++) { w.w_tset(t, ID.P_TRANS, d); writeTrack(t); applyLive(t); $("g" + t).innerHTML = gridHtml(t); } writeTrack(0);   /* ... and the keys play in the new key */
+  kickToBar(Math.max(0, progBar));                                       /* an 808's kick follows the key (and the chord) */
   status2();
 });
 $("bpm").addEventListener("input", () => { const v = +$("bpm").value; w.w_gset(ID.G_BPM, v); $("bpmv").textContent = v; status2(); });

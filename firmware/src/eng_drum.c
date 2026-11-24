@@ -13,6 +13,13 @@ enum { DV_KICK, DV_SNARE, DV_CLAP, DV_HATC, DV_HATO, DV_TOM, DV_RIM, DV_BELL, DV
 enum { DVT_PUNCH, DVT_ROUND, DVT_SNARE, DVT_CLAP, DVT_HATC, DVT_HATO, DVT_TOM, DVT_CONGA,
        DVT_RIM, DVT_CLAVE, DVT_BELL, DVT_CYM, DVT_COUNT };
 #include "x0x/fastmath.h"
+/* Melones BELL KEYS (off by default: the stock notes play as they always have): notes C6..G9 (84..127) play the
+ * kit's bell, note 96 (C7) its natural pitch. On the 808 kits the cowbell plays them chromatically, note 96
+ * sounding C5 (523 Hz, its lower tone; measured: the bell sits 0.55 semitone above, so 9/16 down), whatever
+ * TUNE says. (KIT SID's and SIMMONS' bell, a looped chip arpeggio, takes the notes but not yet their pitch.) */
+static uint8_t drum_bell_keys;
+#define DRUM_BELL_NOTE(n) (drum_bell_keys && (n) >= 84u)
+#define DRUM_BELL_FINE (-9)
 #include "drum_808.c"
 #include "x0x/drum909.c"
 
@@ -41,6 +48,7 @@ static drum909_part_t *drum909_part(uint32_t part);
 static uint32_t drum_lane(uint32_t note);
 static uint32_t drum_gm(const int16_t *p,uint32_t note,int32_t *st);
 static int32_t drum_event_pitch;
+
 static uint32_t drum_event_length;
 static int drum_is909(const track_t *t) { return t->p[P_E0] == DK_909; }
 static int drum_issid(const track_t *t) { return t->p[P_E0] == DK_SID || t->p[P_E0] == DK_SIMMONS; }
@@ -100,6 +108,7 @@ static const char *drum_sound_abbr(const track_t *t,uint32_t sound)
 }
 static uint32_t drum_sound_of(const track_t *t,uint32_t note)
 {
+    if(DRUM_BELL_NOTE(note))note=56u;
     if(drum_is909(t))return drum909_ins(note);
     static const uint8_t map[DR_N]={D9_BD,D9_SD,D9_LT,D9_MT,D9_HT,11,12,13,D9_RS,14,D9_CP,15,D9_RD,D9_CR,D9_OH,D9_CH};
     int32_t st;uint32_t role=drum_gm(t->p,note,&st);return map[dr8_ins(note,role)];
@@ -188,6 +197,10 @@ static const int8_t DRUM_GM[47][2] = {
 /* the drum of a note (DVT_*) and its semitones; KICK picks the kick, the 808 selects its instrument from the GM note */
 static uint32_t drum_gm(const int16_t *p, uint32_t note, int32_t *st)
 {
+    if (DRUM_BELL_NOTE(note)) {
+        *st = (int32_t)note - 96;
+        return DVT_BELL;
+    }
     uint32_t n = note >= 35u && note <= 81u ? note : 36u + (note + 120u - 36u) % 12u, t = (uint32_t)DRUM_GM[n - 35u][0];
     *st = DRUM_GM[n - 35u][1];
     if (t == DVT_PUNCH && p[P_E6] > 0)
@@ -361,6 +374,7 @@ static void drum_note_on(track_t *t, voice_t *v)
     int16_t local[P_COUNT];drum808_values(t,L->sound,local);
     L->r.decay=drum_patch_of(t-trk)->c[L->sound][1];
     L->r.pitch=(drum_patch_of(t-trk)->c[L->sound][0]+drum_event_pitch)*16;
+    if(DRUM_BELL_NOTE(v->note))L->r.pitch+=st*16+DRUM_BELL_FINE;   /* BELL KEYS: in tune (the 808's bell ignores TUNE) */
     dr8_hit(&L->r, ins, v->vel, local);
     v->env_out = mulq15(127 * 258, dr8_level(v->vel, t->p[P_E5]));
     if (lane == DV_HATC && ins == DR_CH)

@@ -556,6 +556,8 @@ static __attribute__((noinline, section(".dsp_text"))) void dr_hat(dr8_t *restri
 /* the 808's instrument for a note (the other kits' drum role where its map has none) */
 static uint32_t dr8_ins(uint32_t note, uint32_t role)
 {
+    if (DRUM_BELL_NOTE(note))
+        note = 56u;
     uint32_t n = note >= 35u && note <= 81u ? note : 36u + (note + 120u - 36u) % 12u, k = DR_GM[n - 35u];
     return k == DR_X ? DR_OF_DVT[role % DVT_COUNT] : k;
 }

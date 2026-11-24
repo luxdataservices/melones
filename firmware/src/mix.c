@@ -302,6 +302,7 @@ static __attribute__((noinline)) void mix_part(track_t *t,uint32_t n)
 #endif
     AP_START(mix_start);
     if(rendered){
+        beatrep_apply((uint32_t)(t-trk),part_buf,n,0);if(spread_on)beatrep_apply((uint32_t)(t-trk),spread_buf,n,1);
         partlp_apply((uint32_t)(t-trk),part_buf,n,0);if(spread_on)partlp_apply((uint32_t)(t-trk),spread_buf,n,1);
         clapfx_capture(t,part_buf,n);duck_capture(t,part_buf,n);
         duck_apply((uint32_t)(t-trk),part_buf,n);if(spread_on)duck_apply((uint32_t)(t-trk),spread_buf,n);

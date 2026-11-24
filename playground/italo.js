@@ -206,11 +206,11 @@ function trapBar() {                    /* steady 8th hats; every roll ends befo
     if (i === 8) n.push(SN, CL);
     if (i === 14) n.push(HO); else if (i % 2 === 0 || i === 3) n.push(HC);
     let v = n;
-    if (i === 3) v = roll(n, [2, 1, 90, 112]);            /* a 32nd double into beat 2 */
-    if (i === 5) v = roll([HC], [3, 1, 70, 104]);         /* a 16th triplet */
-    if (i === 10) v = roll(n, [2, 1, 96, 112]);           /* 32nds on the & of 3 */
-    if (i === 12) v = roll(n, [6, 2, 118, 40]);           /* 32nd triplets fading out over two steps */
-    if (i === 15) v = roll([HC, SN], [4, 1, 40, 100]);    /* a snare and hat swell into the bar */
+    if (i === 3) v = roll(n, [2, 1, 90, 112, HC]);          /* a 32nd double into beat 2 */
+    if (i === 5) v = roll([HC], [3, 1, 70, 104, HC]);       /* a 16th triplet */
+    if (i === 10) v = roll(n, [2, 1, 96, 112, HC]);         /* 32nds on the & of 3 */
+    if (i === 12) v = roll(n, [6, 2, 118, 40, HC]);         /* 32nd triplets fading out over two steps */
+    if (i === 15) v = roll([HC, SN], [4, 1, 40, 100, SN]);  /* a snare roll swelling into the bar */
     s.push(i === 8 ? acc(v) : v);
   }
   return s;
@@ -290,8 +290,8 @@ function setupMaster(w) {
 let KEY = 0;                          /* semitones from A minor: the sequenced notes of the melodic tracks move */
 /* an 808 kit's kick on the key's root: its body (KEYTUNE, measured: MIDI 31.16 for the 808 at TUNE 64) moved by
  * TUNE (3/16 semitone a step) to the root between B0 and A1 (22..33) */
-function tuneKick(w, t, s) {
-  const root = (9 + KEY + 120) % 12, target = (24 + root > 33 ? 12 + root : 24 + root);
+function tuneKick(w, t, s, extra) {
+  const root = (9 + KEY + (extra | 0) + 120) % 12, target = (24 + root > 33 ? 12 + root : 24 + root);
   const base = s.KEYTUNE + ((s.E ? s.E[1] : 64) - 64) * 3 / 16;     /* the kit's own body with its own TUNE */
   const tune = Math.round((s.E ? s.E[1] : 64) + (target - base) * 16 / 3);
   w.w_tset(t, ID.P_E0 + 1, Math.max(0, Math.min(127, tune)));
@@ -303,32 +303,68 @@ function setKey(k) { KEY = k | 0; }
 /* PROGRESSIONS: the melodic lanes walk a chord progression over the 4 bars, one chord a bar (a 5-chord one splits
  * the last bar). Each chord moves the A minor patterns diatonically (steps along A natural minor, so Am's A-C-E
  * becomes F-A-C on VI), the shortest way round; a major V raises G to G# (harmonic minor). Drums never move. */
-const I_ = {d: 0}, VI = {d: -2}, III = {d: 2}, VII = {d: -1}, V = {d: -3, maj: 1}, iv = {d: 3};
+/* a chord: d scale steps from i, acc the accidentals on the scale degrees it lands on (0 = A .. 6 = G): */
+const I_ = {d: 0, rn: "i"}, VI = {d: -2, rn: "VI"}, III = {d: 2, rn: "III"}, VII = {d: -1, rn: "VII"}, iv = {d: 3, rn: "iv"},
+  V = {d: -3, acc: {6: 1}, rn: "V"},                      /* E G# B: the harmonic minor's major V */
+  bII = {d: 1, acc: {1: -1}, rn: "♭II"},                  /* Bb D F: the Phrygian / Neapolitan */
+  bvi = {d: -2, acc: {0: -1}, rn: "♭vi"},                 /* F Ab C: the minor six, the horror-film one */
+  viio = {d: -1, acc: {6: 1}, rn: "vii°"},                /* G# B D: diminished, wants to fall onto i */
+  ivo = {d: 3, acc: {3: 1, 5: 1}, rn: "♯iv°"},            /* D# F# A: the tritone away */
+  IV = {d: 3, acc: {5: 1}, rn: "IV"},                     /* D F# A: the Dorian major four */
+  IIIaug = {d: 2, acc: {6: 1}, rn: "III+"};               /* C E G#: the harmonic minor's creeping augmented */
 const PROGS = {
   "Off": [I_, I_, I_, I_],
-  "i–VI–III–VII (Am F C G)": [I_, VI, III, VII],
-  "i–VII–VI–V (Am G F E)": [I_, VII, VI, V],
-  "i–V–VI–III–iv (Am E F C Dm)": [I_, V, VI, [III, iv]],
+  "i–VI–III–VII": [I_, VI, III, VII],
+  "i–VII–VI–V": [I_, VII, VI, V],
+  "i–V–VI–III–iv": [I_, V, VI, [III, iv]],
+  /* the evil ones */
+  "i–♭II (Phrygian)": [I_, bII, I_, bII],
+  "i–♭vi–i–♭II": [I_, bvi, I_, bII],
+  "i–iv–♭II–V": [I_, iv, bII, V],
+  "i–VI–iv–V": [I_, VI, iv, V],
+  "i–vii°–♭vi–V": [I_, viio, bvi, V],
+  "i–♯iv°–iv–V": [I_, ivo, iv, V],
+  "i–III+–VI–V": [I_, IIIaug, VI, V],
+  "i–IV–VI–V (Dorian)": [I_, IV, VI, V],
 };
 const MINOR = [0, 2, 3, 5, 7, 8, 10];        /* A natural minor, semitones above A */
 let PROG = PROGS.Off;
 function setProg(name) { PROG = PROGS[name] || PROGS.Off; }
 function chordAt(i) { const c = PROG[(i >> 4) & 3]; return Array.isArray(c) ? c[(i & 15) < 8 ? 0 : 1] : c; }
 function chordMove(n, c) {                   /* a note of the A minor pattern, moved to chord c */
-  if (!c || (!c.d && !c.maj)) return n;
+  if (!c || (!c.d && !c.acc)) return n;
   const r = n - 9, oct = Math.floor(r / 12), pc = r - 12 * oct;
   let i = 6; while (MINOR[i] > pc) i--;      /* the scale note at or below (a chromatic note keeps its offset) */
   const j = i + c.d, o2 = oct + Math.floor(j / 7), jj = ((j % 7) + 7) % 7;
   let m = 9 + 12 * o2 + MINOR[jj] + (pc - MINOR[i]);
-  if (c.maj && jj === 6 && pc === MINOR[i]) m += 1;     /* major V: G -> G# */
+  if (c.acc && c.acc[jj] && pc === MINOR[i]) m += c.acc[jj];   /* the chord's accidentals */
   return m;
 }
 const noteAt = (n, i) => chordMove(n, chordAt(i));
+function progBars(key) {                     /* per bar: its numeral(s) and chord name(s) in the key */
+  return PROG.map(c => { const a = Array.isArray(c) ? c : [c]; return {rn: a.map(x => x.rn).join(" / "), name: a.map(x => chordName(x, key)).join(" / ")}; });
+}
+/* the pitch classes (0 = A, before KEY) a played note may take at step i: LOCK 1 CHORD (the chord of that step),
+ * 2 SCALE (A natural minor, and G# under a major V), 0 OFF: all */
+function allowedPcs(i, lock) {
+  if (!lock) return null;
+  const c = chordAt(i);
+  if (lock === 1) return [0, 3, 7].map(x => (((chordMove(57 + x, c) - 9) % 12) + 12) % 12);
+  return MINOR.map((x, j) => (x + (c && c.acc && c.acc[j] || 0) + 12) % 12);
+}
+const chordRoot = i => chordMove(57, chordAt(i)) - 57;   /* semitones the chord's root sits from A */
 function progNames(key) { return PROG.map(c => Array.isArray(c) ? c.map(x => chordName(x, key)).join("/") : chordName(c, key)); }
-function chordName(c, key) {                 /* "Am", "F", "E" ... in the current key */
-  const N = ["C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"];
-  const j = ((c.d % 7) + 7) % 7, root = (9 + key + MINOR[j] + 120) % 12;
-  return N[root] + ([0, 3, 4].includes(j) && !c.maj ? "m" : j === 1 ? "dim" : "");
+function chordName(c, key) {                 /* "Am", "Bb", "G#dim", "A+" ... in the current key */
+  const N = ["C", "C#", "D", "Eb", "E", "F", "F#", "G", "Ab", "A", "Bb", "B"], S = ["C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"];
+  const deg = ((c.d % 7) + 7) % 7, up = c.acc && c.acc[deg] > 0;
+  const r = chordMove(57, c), t3 = ((chordMove(60, c) - r) % 12 + 12) % 12, t5 = ((chordMove(64, c) - r) % 12 + 12) % 12;
+  return (up ? S : N)[((r + key) % 12 + 12) % 12] + (t3 === 3 ? (t5 === 6 ? "dim" : "m") : t5 === 8 ? "+" : "");
+}
+let BELLKEYS = 0;                     /* the drum kit's cowbell plays in tune (808 kits; the firmware's BELL KEYS) */
+function setBellKeys(on) { BELLKEYS = on ? 1 : 0; }
+function bellNote(i) {                /* the BELL row's note at step i: the chord's root in the key, near C5 */
+  const root = ((9 + KEY + chordRoot(i)) % 12 + 12) % 12;   /* 0 = C */
+  return 96 + (root > 6 ? root - 12 : root);                  /* F#4..F#5 (note 96 = C5) */
 }
 function writeSteps(w, t, notes, gate) {
   const tr = t ? KEY : 0;               /* (the drums never move: their notes are the kit's drums) */
@@ -338,9 +374,9 @@ function writeSteps(w, t, notes, gate) {
     const v = notes[i];
     if (v === "tie" || v === "tieS") { w.w_step(t, i, 0, 0, ID.ST_TIE, v === "tieS" ? 2 : 0, 0); continue; }   /* tieS: slide into the next */
     const a = v == null ? [] : Array.isArray(v) ? v : [v];
-    let p = 0; a.forEach((n, k) => { p |= Math.max(0, Math.min(127, (t ? noteAt(n, i) : n) + tr)) << (8 * k); });
+    let p = 0; a.forEach((n, k) => { p |= Math.max(0, Math.min(127, (t ? noteAt(n, i) : BELLKEYS && n === 56 ? bellNote(i) : n) + tr)) << (8 * k); });
     const ac = v && v.acc !== undefined ? v.acc : i % 16 === 0;
-    if (t === 0 && w.w_roll) { const r = v && v.roll; w.w_roll(0, i, r ? r[0] : 0, r ? r[1] : 0, r ? r[2] : 0, r ? r[3] : 0); }
+    if (t === 0 && w.w_roll) { const r = v && v.roll; w.w_roll(0, i, r ? r[0] : 0, r ? r[1] : 0, r ? r[2] : 0, r ? r[3] : 0, r && r[4] ? r[4] : 0); }
     w.w_step(t, i, a.length, p >>> 0, a.length ? ID.ST_NOTE : ID.ST_REST, (a.length && ac ? ID.SF_ACCENT : 0) | (v && v.slide ? 2 : 0), a.length ? (ac ? 112 : 96) : 0);
   }
 }
@@ -388,6 +424,11 @@ function setupSong(w, chosen) {
  * A preset is a sound and a one-bar pattern for one lane. Everything is written over A minor, so any drums, bass,
  * arp and lead go together; KEY moves the melodic lanes. Steps: a note, an array (chord / drums), "tie", or null. */
 const A = [57, 60, 64];                     /* the A minor triad around A3 */
+/* a 4-bar arp: bars 1 and 3 play a, bar 2 plays c (or a), bar 4 the fill; each [step, note] a short stab */
+function arp4(a, fill, c) {
+  const s = new Array(64).fill(null), put = (bar, list) => { for (const [st, n] of list) s[bar * 16 + st] = n; };
+  put(0, a); put(1, c || a); put(2, a); put(3, fill); return s;
+}
 const bar = (list, n = 16) => { const s = new Array(n).fill(null); for (const [st, v, len, sl] of list) { s[st] = sl && len === 1 ? Object.assign([v].flat(), {slide: 1}) : v; for (let i = 1; i < (len || 1); i++) s[st + i] = sl && i === len - 1 ? "tieS" : "tie"; } return s; };
 function italoBar() {                       /* four on the floor, snare + clap on 2 and 4, 16th hats, open hats off the beat */
   const s = [];
@@ -418,10 +459,13 @@ const LANE = {
     {name: "1986 hold", sound: "1986 BASS", steps: () => bar([[0, 33, 12], [12, 31, 4]])},
     {name: "Miami 808", sound: "808 ROLL", steps: () => bar([[0, 33, 6, 1], [6, 36, 4], [10, 31, 4, 1], [14, 33, 2]])}
   ],
-  arp: [
-    {name: "Twinkle", sound: "TWINKLE", steps: () => { const t = [88, 84, 81, 76, 72, 69, null, null]; return Array.from({length: 16}, (_, i) => t[i % 8]); }},
-    {name: "Rising 16ths", sound: "LASER ARP", steps: () => { const t = [69, 72, 76, 81, 84], o = [0, 1, 2, 3, 4, 3, 2, 1]; return Array.from({length: 16}, (_, i) => t[o[i % 8]]); }},
-    {name: "Crystal", sound: "CRYSTAL ARP", steps: () => [81, null, 76, 72, null, 69, 72, null, 76, null, 81, 84, null, 76, null, null]},
+  arp: [   /* stabs: quiet bars that answer at their ends, the fourth bar a fill (A minor; the progression moves them) */
+    {name: "Bar-end stabs", sound: "CRYSTAL ARP", steps: () => arp4([[13, 76], [14, 81], [15, 84]], [[10, 76], [11, 81], [12, 84], [13, 88], [14, 84], [15, 93]])},
+    {name: "Laser drop", sound: "LASER ARP", steps: () => arp4([[12, 93], [13, 88], [14, 84], [15, 81]], [[8, 93], [9, 88], [10, 84], [11, 81], [12, 76], [13, 72], [14, 69], [15, 57]])},
+    {name: "Octave pings", sound: "TWINKLE", steps: () => arp4([[14, 69], [15, 81]], [[6, 69], [7, 81], [10, 69], [11, 81], [14, 69], [15, 93]], [[11, 81], [14, 69], [15, 81]])},
+    {name: "Call & answer", sound: "SYNC ARP", steps: () => arp4([[6, 81], [7, 84], [14, 76], [15, 72]], [[6, 81], [7, 84], [12, 88], [13, 84], [14, 81], [15, 76]])},
+    {name: "Ratchet riser", sound: "LASER ARP", steps: () => arp4([[15, 81]], [[8, 69], [9, 72], [10, 76], [11, 81], [12, 84], [13, 88], [14, 93], [15, 96]])},
+    {name: "Stutter", sound: "CRYSTAL ARP", steps: () => arp4([[12, 81], [13, 81], [15, 81]], [[12, 88], [13, 88], [14, 84], [15, 81]], [[12, 84], [13, 84], [15, 76]])},
     {name: "Off", sound: "TWINKLE", steps: () => new Array(16).fill(null)}
   ],
   lead: [
@@ -438,5 +482,5 @@ const SCENES = [
   {name: "Intro", on: [1, 1, 0, 0]}, {name: "Build", on: [1, 1, 1, 0]}, {name: "Full", on: [1, 1, 1, 1]}, {name: "Break", on: [0, 1, 1, 1]}
 ];
 const SCENE_SONG = [0, 1, 2, 2, 3, 2];     /* Song: each scene 4 bars */
-const ITALO = {LANE, SCENES, SCENE_SONG, ID, SOUNDS, SONG, CLAPS, BEATS, THEMES, setClaps, setBeat, setTheme, setKey, setLen, to64, PROGS, setProg, progNames, noteAt, tuneKick, findSound, applySound, setupSong, loadSection, writeSteps, partSteps};
+const ITALO = {LANE, SCENES, SCENE_SONG, ID, SOUNDS, SONG, CLAPS, BEATS, THEMES, setClaps, setBeat, setTheme, setKey, setLen, to64, PROGS, setProg, setBellKeys, progNames, progBars, allowedPcs, chordRoot, noteAt, tuneKick, findSound, applySound, setupSong, loadSection, writeSteps, partSteps};
 if (typeof module !== "undefined") module.exports = ITALO;
