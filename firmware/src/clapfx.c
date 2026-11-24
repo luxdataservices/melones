@@ -14,7 +14,7 @@
  *    swell, as a reverse reverb on tape would.
  *  - Wet 0 (the default): nothing runs; the mix is bit for bit as without it. */
 static int32_t mix_l[CTL], mix_r[CTL];        /* (mix.c's bus, declared again: it comes later) */
-#define CFX_SW 17640                           /* the longest swell: 400 ms */
+#define CFX_SW 30870                           /* the longest swell: 700 ms */
 #define CFX_C0 1116
 #define CFX_C1 1188
 #define CFX_C2 1277
@@ -34,7 +34,7 @@ static struct {
     float comb0[CFX_C0], comb1[CFX_C1], comb2[CFX_C2], comb3[CFX_C3];
     float apl0[CFX_A0], apl1[CFX_A1], apr0[CFX_A0 + CFX_W], apr1[CFX_A1 + CFX_W];
     int16_t sw[CFX_SW];
-} cfx = {.feed = 104, .swell = 64};
+} cfx = {.feed = 104, .swell = 90};
 
 static inline __attribute__((always_inline)) void clapfx_note(const track_t *t, uint32_t note)
 {
@@ -96,7 +96,7 @@ static void clapfx_block(uint32_t n)
         float sw_out = 0.f;
         if (cfx.play_len) {                                   /* the reversed swell, louder as it nears the clap */
             float k = (float)cfx.play_pos / (float)cfx.play_len;
-            sw_out = (float)cfx.sw[cfx.play_len - 1u - cfx.play_pos] * (1.f / 1024.f) * k * k;
+            sw_out = (float)cfx.sw[cfx.play_len - 1u - cfx.play_pos] * (1.f / 1024.f) * k * (0.35f + 0.65f * k);
             if (++cfx.play_pos >= cfx.play_len) cfx.play_len = 0;
         } else if (cfx.rec_len && cfx.rec >= cfx.rec_len && cfx.now == cfx.play_at) {
             cfx.play_len = cfx.rec_len;
@@ -111,8 +111,8 @@ static void clapfx_block(uint32_t n)
             float v = (l + r) * 512.f;
             cfx.sw[cfx.rec++] = (int16_t)(v > 32767.f ? 32767.f : v < -32768.f ? -32768.f : v);
         }
-        l = l * 14000.f + sw_out * 22000.f;                   /* WET 127: the wash ~7 dB under the clap (as on */
-        r = r * 14000.f + sw_out * 22000.f;                   /* the records), the swell peaking just under it */
+        l = l * 14000.f + sw_out * 44000.f;                   /* WET 127: the wash ~7 dB under the clap (as on */
+        r = r * 14000.f + sw_out * 44000.f;                   /* the records), the swell rising to just under it */
         mix_l[i] += (int32_t)(l * wet);
         mix_r[i] += (int32_t)(r * wet);
     }

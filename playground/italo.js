@@ -8,7 +8,7 @@ const SID = 3, DRUM = 10;
  *   MODEL 0 6581, 1 8580 | WAVE 0 TRI 1 SAW 2 PULSE 3 NOISE 4 T+S 5 T+P 6 S+P 7 TSP
  *   STACK 0 ONE 1 DETUNE 2 OCT 3 FIFTH 4 MAJOR 5 SYNC 6 RING 7 SUB | MODE 0 LP 1 BP 2 HP 3 NOTCH ... 7 OFF
  * VOICE 0 POLY 1 MONO 2 LEGATO. Times 0-127 (60 = 78 ms, 70 = 160 ms, 80 = 330 ms, 90 = 680 ms).
- * LFO rate 0-127 (55 = 0.9 Hz, 88 = 5 Hz). ED_PIT / LD_PIT: 63 = 12 semitones.
+ * LFO rate 0-127 (55 = 0.9 Hz, 88 = 5 Hz). ED_PIT / LD_PIT: 3/16 semitone a step (1 = 19 cents, 63 = 12 semitones).
  * ECHO: the note echo [level, rate (0 1/4, 1 1/8, 2 1/16, 4 8T, 5 16T), decay].
  * SEND: to the master [chorus, reverb, room]. */
 const SOUNDS = {
@@ -38,17 +38,17 @@ const SOUNDS = {
   ],
   lead: [
     {name: "CYBER LEAD", note: "Saw lead, delayed vibrato, glide", eng: SID, pre: 8,
-     E: [0, 1, 1, 64, 70, 5, 0, 18], ATK: 6, DEC: 70, SUS: 104, REL: 58, ED_FLT: 8, VOICE: 2, GLIDE: 18,
-     LRATE: 88, LWAVE: 0, LFADE: 82, LD_PIT: 3, LEVEL: 112, SEND: [50, 64, 0]},
+     E: [0, 1, 1, 64, 70, 5, 0, 18], ATK: 6, DEC: 70, SUS: 104, REL: 58, ED_FLT: 8, VOICE: 2, GLIDE: 8,
+     LRATE: 88, LWAVE: 0, LFADE: 84, LD_PIT: 1, LEVEL: 112, SEND: [50, 64, 0]},
     {name: "XALAN SYNC", note: "Sync sweep lead", eng: SID, pre: 10,
-     E: [1, 1, 5, 64, 104, 5, 0, 12], ATK: 2, DEC: 74, SUS: 100, REL: 52, ED_SHP: 46, VOICE: 2, GLIDE: 12,
-     LRATE: 86, LFADE: 84, LD_PIT: 2, LEVEL: 110, SEND: [40, 60, 0]},
+     E: [1, 1, 5, 64, 104, 5, 0, 12], ATK: 2, DEC: 74, SUS: 100, REL: 52, ED_SHP: 46, VOICE: 2, GLIDE: 6,
+     LRATE: 86, LFADE: 84, LD_PIT: 1, LEVEL: 110, SEND: [40, 60, 0]},
     {name: "STOP PULSE", note: "Hollow PWM lead", eng: SID, pre: 11,
-     E: [0, 2, 1, 30, 80, 6, 0, 30], ATK: 2, DEC: 70, SUS: 100, REL: 50, ED_FLT: 6, VOICE: 2, GLIDE: 10,
+     E: [0, 2, 1, 30, 80, 6, 0, 30], ATK: 2, DEC: 70, SUS: 100, REL: 50, ED_FLT: 6, VOICE: 2, GLIDE: 6,
      LRATE: 60, LD_SHP: 18, LEVEL: 112, SEND: [44, 60, 0]},
     {name: "VELVET STRINGS", note: "Slow PWM pad (poly)", eng: SID, pre: 16,
      E: [0, 2, 1, 44, 64, 6, 0, 12], ATK: 74, DEC: 86, SUS: 110, REL: 82, VOICE: 0,
-     LRATE: 52, LWAVE: 1, LD_SHP: 22, LEVEL: 94, SEND: [70, 60, 0]},
+     LRATE: 52, LWAVE: 1, LD_SHP: 12, LEVEL: 94, SEND: [70, 60, 0]},
     {name: "HI-NRG BRASS", note: "Detuned saw stab (poly)", eng: SID, pre: 27,
      E: [0, 1, 1, 64, 50, 8, 0, 40], ATK: 18, DEC: 70, SUS: 70, REL: 46, ED_FLT: 26, VOICE: 0, LEVEL: 92,
      SEND: [40, 40, 0]},
@@ -118,7 +118,7 @@ const SONG = {
   defaults: ["SID DIGI KIT", "BODY HEAT", "TWINKLE", "CYBER LEAD"],
   duck: [0, 52, 30, 38],        /* DUCK per track: the kick pumps bass, arp and lead/pad, gently */
   duckRel: 76,
-  clap: [80, 100, 64],          /* INFINITY CLAP: wet, feed (how long the wash hangs), swell (the reverse into each clap) */                  /* DUCK REL: about 250 ms, the kick's beat at 118 BPM */
+  clap: [80, 100, 90],          /* INFINITY CLAP: wet, feed (how long the wash hangs), swell (the reverse into each clap) */                  /* DUCK REL: about 250 ms, the kick's beat at 118 BPM */
   arrange: [0, 1, 2, 3, 4, 2, 3],  /* sections in order, 4 bars each */
   sections: [
     {name: "Intro", drums: "hats", bass: "gallop", arp: null, lead: "strings"},
