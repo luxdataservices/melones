@@ -211,7 +211,7 @@ function setPreset(t, k) {
   buildLanes(); if (t === sel) buildSound();
 }
 const scopeBuf = new Float32Array(2048); let scopePos = 0;
-const ENUMS2 = {CST: ["ALL", "FLAM", "TRIPLET", "RATCHET", "BEATREP"], SWG: ["STRAIGHT", "52%", "54%", "56%", "MPC 58%", "60%", "62%", "64%", "TRIPLET", "DRUNK 70%"], LSW: ["FOLLOW", "STRAIGHT", "+ LIGHT", "+ MORE", "+ HEAVY"], DMODE: ["TRIGGER", "COMP"], DKEY: ["DRUMS", "GHOST"], DON: ["ALL", "BEATS"], DEV: ["ALL", "2ND", "4TH"], WR: ["4 BARS", "2 BARS", "1 BAR", "1/2", "1/4"],
+const ENUMS2 = {CST: ["ALL", "FLAM", "TRIPLET", "RATCHET", "BEATREP"], SWG: ["STRAIGHT", "52%", "54%", "56%", "MPC 58%", "60%", "62%", "64%", "TRIPLET", "DRUNK 70%"], LSW: ["FOLLOW", "STRAIGHT", "+ LIGHT", "+ MORE", "+ HEAVY"], LSY: ["FREE", "4 BAR", "2 BAR", "1/1", "1/2", "1/4", "1/8", "1/8T", "1/16", "1/16T", "1/32"], LTG: ["PER NOTE", "ON BEAT"], DMODE: ["TRIGGER", "COMP"], DKEY: ["DRUMS", "GHOST"], DON: ["ALL", "BEATS"], DEV: ["ALL", "2ND", "4TH"], WR: ["4 BARS", "2 BARS", "1 BAR", "1/2", "1/4"],
   ARATE: ["1/8", "1/16", "1/32", "16T", "8T"]};
 const warp = {depth: 30, rate: 2};        /* the bass's cutoff warp: LFO -> filter, synced (rate: index into WR) */
 const dlp = {cut: 127, res: 0};           /* the drum lane's low pass (127: open, bypassed) */
@@ -501,12 +501,13 @@ function buildSound() {
   const t = sel, snd = I.findSound(loaded[t]), isSid = snd && snd.eng === 3, tp = id => ({get: () => w.w_tget(t, id), set: v => w.w_tset(t, id, v)});
   const P = (n, id, lo, hi, e) => { const a = tp(id); return knob("s_" + n.replace(/\W/g, ""), n, lo, hi, a.get, v => { a.set(v); line(); }, {e, reset: () => base(n)}); };
   const base = n => { const s = I.findSound(loaded[t]); const map = {MODEL: 0, WAVE: 1, STACK: 2, PW: 3, CUT: 4, RES: 5, MODE: 6, DRIVE: 7};
-    if (n in map && s.E) return s.E[map[n]]; const key = {"ENV>FLT": "ED_FLT", "PITCH ENV": "ED_PIT", "SHAPE ENV": "ED_SHP", "VIBRATO": "LD_PIT", "GLIDE": "GLIDE"}[n] || n; return s[key] ?? w.w_tget(t, ID["P_" + key] ?? 0); };
+    if (n in map && s.E) return s.E[map[n]]; const key = {"ENV>FLT": "ED_FLT", "PITCH ENV": "ED_PIT", "SHAPE ENV": "ED_SHP", "VIBRATO": "LD_PIT", "GLIDE": "GLIDE", "VIB RATE": "LSYNC", "VIB PHASE": "LTRIG", "VIB HZ": "LRATE"}[n] || n; return s[key] ?? w.w_tget(t, ID["P_" + key] ?? 0); };
   SK = isSid ? [
     P("MODEL", ID.P_E0, 0, 3, "MODEL"), P("WAVE", ID.P_E0 + 1, 0, 7, "WAVE"), P("STACK", ID.P_E0 + 2, 0, 7, "STACK"), P("PW", ID.P_E0 + 3, 0, 127),
     P("CUT", ID.P_E0 + 4, 0, 127), P("RES", ID.P_E0 + 5, 0, 15), P("MODE", ID.P_E0 + 6, 0, 7, "MODE"), P("DRIVE", ID.P_E0 + 7, 0, 127),
     P("ATK", ID.P_ATK, 0, 127), P("DEC", ID.P_DEC, 0, 127), P("SUS", ID.P_SUS, 0, 127), P("REL", ID.P_REL, 0, 127),
     P("ENV>FLT", ID.P_ED_FLT, -64, 63), P("PITCH ENV", ID.P_ED_PIT, -64, 63), P("SHAPE ENV", ID.P_ED_SHP, -64, 63), P("VIBRATO", ID.P_LD_PIT, -64, 63),
+    P("VIB RATE", ID.P_LSYNC, 0, 10, "LSY"), P("VIB PHASE", ID.P_LTRIG, 0, 1, "LTG"), P("VIB HZ", ID.P_LRATE, 0, 127),
     P("GLIDE", ID.P_GLIDE, 0, 127), P("VOICE", ID.P_VOICE, 0, 3, "VOICE")
   ] : [];
   $("snd").innerHTML = `<div class="grp">${NAMES[sel]}: ${loaded[t]}<span>${snd ? snd.note : ""}</span></div>` +
@@ -521,7 +522,7 @@ function line() {
   const g = id => w.w_tget(t, id), nm = ($("sname").value || "MY SOUND").toUpperCase().replace(/[^A-Z0-9 +\-]/g, "").slice(0, 12);
   const E = []; for (let i = 0; i < 8; i++) E.push(g(ID.P_E0 + i));
   const o = {name: nm, eng: 3, pre: s.pre, E, ATK: g(ID.P_ATK), DEC: g(ID.P_DEC), SUS: g(ID.P_SUS), REL: g(ID.P_REL), ED_FLT: g(ID.P_ED_FLT),
-    ED_PIT: g(ID.P_ED_PIT), ED_SHP: g(ID.P_ED_SHP), VOICE: g(ID.P_VOICE), GLIDE: g(ID.P_GLIDE), LRATE: g(ID.P_LRATE), LD_PIT: g(ID.P_LD_PIT),
+    ED_PIT: g(ID.P_ED_PIT), ED_SHP: g(ID.P_ED_SHP), VOICE: g(ID.P_VOICE), GLIDE: g(ID.P_GLIDE), LRATE: g(ID.P_LRATE), LSYNC: g(ID.P_LSYNC), LTRIG: g(ID.P_LTRIG), LD_PIT: g(ID.P_LD_PIT),
     LD_SHP: g(ID.P_LD_SHP), LEVEL: g(ID.P_LEVEL), SEND: [g(ID.P_FXSEND), g(ID.P_FXSEND2), g(ID.P_FXSEND3)], DUCK: fxState.duck[t]};
   $("line").textContent = "{" + Object.entries(o).map(([k, v]) => `${k}: ${JSON.stringify(v).replace(/,/g, ", ")}`).join(", ") + "},";
 }

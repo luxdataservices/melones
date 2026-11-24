@@ -271,7 +271,13 @@ function applySound(w, t, s) {
   if (s.E) s.E.forEach((v, i) => w.w_tset(t, ID.P_E0 + i, v));
   for (const k of ["ATK", "DEC", "SUS", "REL", "ED_FLT", "ED_PIT", "ED_SHP", "VOICE", "GLIDE", "LRATE", "LWAVE", "LFADE", "LD_PIT", "LD_SHP", "LD_FLT", "LEVEL", "PAN"])
     if (s[k] !== undefined) w.w_tset(t, ID["P_" + k], s[k]);
-  if (s.LD_PIT || s.LD_SHP || s.LD_FLT) { w.w_tset(t, ID.P_LSYNC, 0); }
+  for (const k of ["LD_PIT", "LD_SHP"]) if (s.eng !== DRUM && s[k] === undefined) w.w_tset(t, ID["P_" + k], 0);   /* none left over from the last sound */
+  /* the LFO: a sound's own LSYNC / LTRIG, else vibrato locked to the beat (1/8 triplets, ~6 Hz at 124 BPM, running
+   * from the song's top), else free at LRATE */
+  if (s.LD_PIT || s.LD_SHP || s.LD_FLT) {
+    const sync = s.LSYNC !== undefined ? s.LSYNC : s.LD_PIT ? 7 : 0;
+    w.w_tset(t, ID.P_LSYNC, sync); w.w_tset(t, ID.P_LTRIG, s.LTRIG !== undefined ? s.LTRIG : sync ? 1 : 0);
+  }
   if (s.eng === DRUM) w.w_tset(t, ID.P_LN2, s.CLAPLVL || 92);   /* the clap lane a few dB down (127 = the kit's own) */
   if (s.KEYTUNE) tuneKick(w, t, s);
   const e = s.ECHO || [0, 1, 64];
@@ -448,35 +454,32 @@ function miamiBar() {                       /* Miami bass: the 808's boom on 1, 
 }
 const LANE = {
   drums: [
-    {name: "Italo 4/4", sound: "SID DIGI KIT", steps: () => italoBar()},
+    {name: "Italo", sound: "SID DIGI KIT", steps: () => italoBar()},
     {name: "Spacer", sound: "SID DIGI KIT", steps: () => [...spacerBar(0), ...spacerBar(1)], bpm: 124},
     {name: "1986", sound: "SIMMONS KIT", steps: () => bar1986(), bpm: 125},
-    {name: "Miami Boom", sound: "808 BOOM", steps: () => miamiBar(), bpm: 126},
+    {name: "Miami", sound: "808 BOOM", steps: () => miamiBar(), bpm: 126},
     {name: "Trap", sound: "808 KIT", steps: () => trapBar(), bpm: 140}
   ],
   bass: [
-    {name: "Octave drive", sound: "BODY HEAT", steps: () => Array.from({length: 16}, (_, i) => i % 2 ? 45 : 33)},
+    {name: "Octaves", sound: "BODY HEAT", steps: () => Array.from({length: 16}, (_, i) => i % 2 ? 45 : 33)},
     {name: "Gallop", sound: "BODY HEAT", steps: () => Array.from({length: 16}, (_, i) => i % 4 === 1 ? null : i % 4 === 3 ? 45 : 33)},
     {name: "Electro", sound: "MONEY BASS", steps: () => [33, null, null, 33, null, null, 45, 33, 33, null, 40, 45, null, null, 45, null]},
-    {name: "1986 hold", sound: "1986 BASS", steps: () => bar([[0, 33, 12], [12, 31, 4]])},
-    {name: "Miami 808", sound: "808 ROLL", steps: () => bar([[0, 33, 6, 1], [6, 36, 4], [10, 31, 4, 1], [14, 33, 2]])}
+    {name: "Hold", sound: "1986 BASS", steps: () => bar([[0, 33, 12], [12, 31, 4]])},
+    {name: "808", sound: "808 ROLL", steps: () => bar([[0, 33, 6, 1], [6, 36, 4], [10, 31, 4, 1], [14, 33, 2]])}
   ],
   arp: [   /* stabs: quiet bars that answer at their ends, the fourth bar a fill (A minor; the progression moves them) */
-    {name: "Bar-end stabs", sound: "CRYSTAL ARP", steps: () => arp4([[13, 76], [14, 81], [15, 84]], [[10, 76], [11, 81], [12, 84], [13, 88], [14, 84], [15, 93]])},
-    {name: "Laser drop", sound: "LASER ARP", steps: () => arp4([[12, 93], [13, 88], [14, 84], [15, 81]], [[8, 93], [9, 88], [10, 84], [11, 81], [12, 76], [13, 72], [14, 69], [15, 57]])},
-    {name: "Octave pings", sound: "TWINKLE", steps: () => arp4([[14, 69], [15, 81]], [[6, 69], [7, 81], [10, 69], [11, 81], [14, 69], [15, 93]], [[11, 81], [14, 69], [15, 81]])},
-    {name: "Call & answer", sound: "SYNC ARP", steps: () => arp4([[6, 81], [7, 84], [14, 76], [15, 72]], [[6, 81], [7, 84], [12, 88], [13, 84], [14, 81], [15, 76]])},
-    {name: "Ratchet riser", sound: "LASER ARP", steps: () => arp4([[15, 81]], [[8, 69], [9, 72], [10, 76], [11, 81], [12, 84], [13, 88], [14, 93], [15, 96]])},
-    {name: "Stutter", sound: "CRYSTAL ARP", steps: () => arp4([[12, 81], [13, 81], [15, 81]], [[12, 88], [13, 88], [14, 84], [15, 81]], [[12, 84], [13, 84], [15, 76]])},
-    {name: "Off", sound: "TWINKLE", steps: () => new Array(16).fill(null)}
+    {name: "Stabs", sound: "CRYSTAL ARP", steps: () => arp4([[13, 76], [14, 81], [15, 84]], [[10, 76], [11, 81], [12, 84], [13, 88], [14, 84], [15, 93]])},
+    {name: "Drop", sound: "LASER ARP", steps: () => arp4([[12, 93], [13, 88], [14, 84], [15, 81]], [[8, 93], [9, 88], [10, 84], [11, 81], [12, 76], [13, 72], [14, 69], [15, 57]])},
+    {name: "Pings", sound: "TWINKLE", steps: () => arp4([[14, 69], [15, 81]], [[6, 69], [7, 81], [10, 69], [11, 81], [14, 69], [15, 93]], [[11, 81], [14, 69], [15, 81]])},
+    {name: "Answer", sound: "SYNC ARP", steps: () => arp4([[6, 81], [7, 84], [14, 76], [15, 72]], [[6, 81], [7, 84], [12, 88], [13, 84], [14, 81], [15, 76]])},
+    {name: "Riser", sound: "LASER ARP", steps: () => arp4([[15, 81]], [[8, 69], [9, 72], [10, 76], [11, 81], [12, 84], [13, 88], [14, 93], [15, 96]])}
   ],
   lead: [
-    {name: "Goth strings", sound: "VELVET STRINGS", gate: 120, steps: () => bar([[0, A, 15]])},
-    {name: "Night hook", sound: "CYBER LEAD", steps: () => bar([[0, 76, 3], [3, 76, 2], [6, 74, 1], [7, 72, 2], [9, 69, 3], [12, 72, 2], [14, 74, 2]])},
-    {name: "Robot", sound: "XALAN SYNC", steps: () => bar([[0, 76, 1], [2, 76, 1], [4, 74, 1], [5, 76, 2], [8, 69, 2], [11, 72, 1], [12, 72, 2], [14, 76, 2]])},
+    {name: "Strings", sound: "VELVET STRINGS", gate: 120, steps: () => bar([[0, A, 15]])},
+    {name: "Hook", sound: "CYBER LEAD", steps: () => bar([[0, 76, 3], [3, 76, 2], [6, 74, 1], [7, 72, 2], [9, 69, 3], [12, 72, 2], [14, 74, 2]])},
     {name: "Ghostcar", sound: "GHOSTCAR", steps: () => bar([[0, 69, 2], [2, 67, 2], [4, 65, 2], [6, 64, 2], [8, 69, 2], [10, 64, 2], [12, 65, 2], [14, 74, 1], [15, 71, 1]])},
-    {name: "Dark bells", sound: "STOP PULSE", steps: () => bar([[0, 76, 3], [3, 74, 1], [4, 72, 4], [10, 69, 2], [12, 72, 4]])},
-    {name: "Brass stabs", sound: "HI-NRG BRASS", steps: () => bar([[2, A, 1], [6, A, 1], [10, A, 1], [14, A, 1]])}
+    {name: "Bells", sound: "STOP PULSE", steps: () => bar([[0, 76, 3], [3, 74, 1], [4, 72, 4], [10, 69, 2], [12, 72, 4]])},
+    {name: "Brass", sound: "HI-NRG BRASS", steps: () => bar([[2, A, 1], [6, A, 1], [10, A, 1], [14, A, 1]])}
   ]
 };
 /* scenes: which lanes play */
