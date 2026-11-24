@@ -41,7 +41,7 @@ const SOUNDS = {
      SEND: [30, 34, 0]}
   ],
   lead: [
-    {name: "1986 LEAD", note: "Bright detuned saw riff, short 8ths", eng: SID, pre: 8,
+    {name: "GHOSTCAR", note: "Bright detuned saw riff, short 8ths", eng: SID, pre: 8,
      E: [0, 1, 1, 64, 104, 4, 0, 30], ATK: 0, DEC: 66, SUS: 70, REL: 40, ED_FLT: 14, VOICE: 1, LEVEL: 104, SEND: [50, 50, 0]},
     {name: "CYBER LEAD", note: "Saw lead, delayed vibrato, glide", eng: SID, pre: 8,
      E: [0, 1, 1, 64, 70, 5, 0, 18], ATK: 6, DEC: 70, SUS: 104, REL: 58, ED_FLT: 8, VOICE: 2, GLIDE: 8,
@@ -101,7 +101,7 @@ const THEMES = {
       [32, 72, 2], [34, 69, 2], [36, 65, 4], [40, 69, 2], [42, 72, 2], [44, 77, 4],
       [48, 80, 4], [52, 76, 2], [54, 71, 2], [56, 76, 6], [62, 71, 2]]},
   "1986": {note: "Transcribed: Bm | Bm (A) | G | A held bass under an 8th-note B-A-G-F# riff (written in A minor, opens in B minor)",
-    bass: "held", key: 2, bpm: 125, sounds: {bass: "1986 BASS", lead: "1986 LEAD"},
+    bass: "held", key: 2, bpm: 125, sounds: {bass: "1986 BASS", lead: "GHOSTCAR"},
     ch: [[45, [57, 60, 64]], [45, [57, 60, 64]], [41, [53, 57, 60]], [43, [55, 59, 62]]],
     bassSteps: [[0, 33, 16], [16, 33, 12], [28, 31, 4], [32, 29, 16], [48, 31, 16]],
     mel: [[0, 69, 2], [2, 67, 2], [4, 65, 2], [6, 64, 2], [8, 69, 2], [10, 64, 2], [12, 65, 2], [14, 74, 1], [15, 71, 1],
@@ -428,7 +428,7 @@ const LANE = {
     {name: "Goth strings", sound: "VELVET STRINGS", gate: 120, steps: () => bar([[0, A, 15]])},
     {name: "Night hook", sound: "CYBER LEAD", steps: () => bar([[0, 76, 3], [3, 76, 2], [6, 74, 1], [7, 72, 2], [9, 69, 3], [12, 72, 2], [14, 74, 2]])},
     {name: "Robot", sound: "XALAN SYNC", steps: () => bar([[0, 76, 1], [2, 76, 1], [4, 74, 1], [5, 76, 2], [8, 69, 2], [11, 72, 1], [12, 72, 2], [14, 76, 2]])},
-    {name: "1986 riff", sound: "1986 LEAD", steps: () => bar([[0, 69, 2], [2, 67, 2], [4, 65, 2], [6, 64, 2], [8, 69, 2], [10, 64, 2], [12, 65, 2], [14, 74, 1], [15, 71, 1]])},
+    {name: "Ghostcar", sound: "GHOSTCAR", steps: () => bar([[0, 69, 2], [2, 67, 2], [4, 65, 2], [6, 64, 2], [8, 69, 2], [10, 64, 2], [12, 65, 2], [14, 74, 1], [15, 71, 1]])},
     {name: "Dark bells", sound: "STOP PULSE", steps: () => bar([[0, 76, 3], [3, 74, 1], [4, 72, 4], [10, 69, 2], [12, 72, 4]])},
     {name: "Brass stabs", sound: "HI-NRG BRASS", steps: () => bar([[2, A, 1], [6, A, 1], [10, A, 1], [14, A, 1]])}
   ]
