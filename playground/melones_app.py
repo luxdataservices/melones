@@ -13,7 +13,7 @@ import pathlib
 import sys
 import webbrowser
 
-PAGE = pathlib.Path(__file__).resolve().parent / "Melones Italo.html"
+PAGE = pathlib.Path(__file__).resolve().parent / "melones_italo.html"
 
 
 def main() -> int:

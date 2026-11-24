@@ -1,0 +1,14 @@
+#!/bin/sh
+# Melones from the terminal.
+#   ./melones update   pull the latest Melones (the playground page comes prebuilt)
+#   ./melones play     open the playground (its own window with pywebview, else your browser)
+#   ./melones build    rebuild the playground from the firmware source (needs clang with a wasm32 target,
+#                      e.g. Homebrew's llvm on a Mac, and Python 3)
+set -e
+cd "$(dirname "$0")"
+case "${1:-play}" in
+  update) git pull --ff-only && echo "Melones is up to date: ./melones play" ;;
+  play) python3 playground/melones_app.py ;;
+  build) sh playground/build.sh ;;
+  *) echo "usage: ./melones [update|play|build]"; exit 2 ;;
+esac
