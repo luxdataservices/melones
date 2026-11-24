@@ -84,7 +84,7 @@ const SOUNDS = {
 const THEMES = {
   "Night Drive": {note: "Am F G Em at 124: driving 16th octave bass, rising 16th arps, 16th hats, the hook on top", bass: "octave", arp: "arp", hats16: 1, bpm: 124,
     ch: [[45, [57, 60, 64]], [41, [53, 57, 60]], [43, [55, 59, 62]], [40, [52, 55, 59]]],
-    mel: [[0, 76, 3], [3, 76, 2], [6, 74, 1], [7, 72, 2], [9, 69, 3], [12, 72, 2], [14, 74, 2],
+    mel: [[0, 76, 3], [3, 76, 3], [6, 74, 1], [7, 72, 2], [9, 69, 3], [12, 72, 2], [14, 74, 2],
       [16, 72, 3], [19, 72, 2], [22, 69, 1], [23, 72, 2], [25, 77, 4], [29, 76, 3],
       [32, 74, 3], [35, 74, 2], [38, 72, 1], [39, 74, 2], [41, 79, 4], [45, 77, 1], [46, 76, 2],
       [48, 76, 6], [54, 74, 2], [56, 71, 2], [58, 76, 6]]},
@@ -115,7 +115,7 @@ const THEMES = {
       [16, 33, 6], [22, 40, 2, 1], [24, 38, 2], [26, 36, 4, 1], [30, 33, 2],
       [32, 29, 6, 1], [38, 33, 4], [42, 36, 4, 1], [46, 29, 2],
       [48, 31, 6], [54, 35, 2, 1], [56, 38, 4], [60, 28, 4, 1]],
-    mel: [[0, 76, 3], [3, 74, 1], [4, 72, 4], [10, 69, 2], [12, 72, 4],
+    mel: [[0, 76, 3], [3, 74, 1], [4, 72, 6], [10, 69, 2], [12, 72, 4],
       [16, 76, 3], [19, 77, 1], [20, 76, 4], [26, 74, 2], [28, 72, 4],
       [32, 77, 3], [35, 76, 1], [36, 72, 4], [42, 69, 2], [44, 72, 4],
       [48, 74, 3], [51, 72, 1], [52, 71, 4], [58, 67, 2], [60, 71, 4]]},
@@ -156,7 +156,7 @@ function arpPattern(style) {
 }
 /* [step, note, length]: the Night Drive hook (THEMES carries each theme's own) */
 const MELODY_ND = [
-  [0, 76, 3], [3, 76, 2], [6, 74, 1], [7, 72, 2], [9, 69, 3], [12, 72, 2], [14, 74, 2],
+  [0, 76, 3], [3, 76, 3], [6, 74, 1], [7, 72, 2], [9, 69, 3], [12, 72, 2], [14, 74, 2],
   [16, 72, 3], [19, 72, 2], [22, 69, 1], [23, 72, 2], [25, 77, 4], [29, 76, 3],
   [32, 74, 3], [35, 74, 2], [38, 72, 1], [39, 74, 2], [41, 79, 4], [45, 77, 1], [46, 76, 2],
   [48, 76, 6], [54, 74, 2], [56, 71, 2], [58, 76, 6]
@@ -345,7 +345,14 @@ function setProg(name) { PROG = PROGS[name] || PROGS.Off; }
 let PROG_OFF = 0;                            /* a loop shorter than 4 bars: the bar of the progression it starts on */
 function setProgOff(n) { PROG_OFF = n & 3; }
 function chordAt(i) { const c = PROG[((i >> 4) + PROG_OFF) & 3]; return Array.isArray(c) ? c[(i & 15) < 8 ? 0 : 1] : c; }
-function chordMove(n, c) {                   /* a note of the A minor pattern, moved to chord c */
+/* SCALE: the patterns are written in A natural minor; another scale moves each scale step onto its own (Hijaz:
+ * B -> Bb, C -> C#, the half step and step-and-a-half of its first jins), notes off the scale left as they are */
+const SCALES = {Minor: [0, 2, 3, 5, 7, 8, 10], Hijaz: [0, 1, 4, 5, 7, 8, 10]};
+let SC = SCALES.Minor;
+function setScale(name) { SC = SCALES[name] || SCALES.Minor; }
+function toScale(m) { const pc = ((m - 9) % 12 + 12) % 12, k = MINOR.indexOf(pc); return k >= 0 ? m + SC[k] - MINOR[k] : m; }
+function chordMove(n, c) { return toScale(chordMove0(n, c)); }
+function chordMove0(n, c) {                  /* a note of the A minor pattern, moved to chord c (still in minor) */
   if (!c || (!c.d && !c.acc)) return n;
   const r = n - 9, oct = Math.floor(r / 12), pc = r - 12 * oct;
   let i = 6; while (MINOR[i] > pc) i--;      /* the scale note at or below (a chromatic note keeps its offset) */
@@ -364,7 +371,7 @@ function allowedPcs(i, lock) {
   if (!lock) return null;
   const c = chordAt(i);
   if (lock === 1) return [0, 3, 7].map(x => (((chordMove(57 + x, c) - 9) % 12) + 12) % 12);
-  return MINOR.map((x, j) => (x + (c && c.acc && c.acc[j] || 0) + 12) % 12);
+  return SC.map((x, j) => (x + (c && c.acc && c.acc[j] || 0) + 12) % 12);
 }
 const chordRoot = i => chordMove(57, chordAt(i)) - 57;   /* semitones the chord's root sits from A */
 function progNames(key) { return PROG.map(c => Array.isArray(c) ? c.map(x => chordName(x, key)).join("/") : chordName(c, key)); }
@@ -485,10 +492,10 @@ const LANE = {
     {name: "Riser", sound: "LASER ARP", steps: () => arp4([[15, 81]], [[8, 69], [9, 72], [10, 76], [11, 81], [12, 84], [13, 88], [14, 93], [15, 96]])}
   ],
   lead: [
-    {name: "Strings", sound: "VELVET STRINGS", gate: 120, steps: () => bar([[0, A, 15]])},
-    {name: "Hook", sound: "CYBER LEAD", steps: () => bar([[0, 76, 3], [3, 76, 2], [6, 74, 1], [7, 72, 2], [9, 69, 3], [12, 72, 2], [14, 74, 2]])},
+    {name: "Strings", sound: "VELVET STRINGS", gate: 120, steps: () => bar([[0, A, 16]])},
+    {name: "Hook", sound: "CYBER LEAD", steps: () => bar([[0, 76, 3], [3, 76, 3], [6, 74, 1], [7, 72, 2], [9, 69, 3], [12, 72, 2], [14, 74, 2]])},
     {name: "Ghostcar", sound: "GHOSTCAR", steps: () => bar([[0, 69, 2], [2, 67, 2], [4, 65, 2], [6, 64, 2], [8, 69, 2], [10, 64, 2], [12, 65, 2], [14, 74, 1], [15, 71, 1]])},
-    {name: "Bells", sound: "STOP PULSE", steps: () => bar([[0, 76, 3], [3, 74, 1], [4, 72, 4], [10, 69, 2], [12, 72, 4]])},
+    {name: "Bells", sound: "STOP PULSE", steps: () => bar([[0, 76, 3], [3, 74, 1], [4, 72, 6], [10, 69, 2], [12, 72, 4]])},
     {name: "Brass", sound: "HI-NRG BRASS", steps: () => bar([[2, A, 1], [6, A, 1], [10, A, 1], [14, A, 1]])}
   ]
 };
@@ -497,5 +504,5 @@ const SCENES = [
   {name: "Intro", on: [1, 1, 0, 0]}, {name: "Build", on: [1, 1, 1, 0]}, {name: "Full", on: [1, 1, 1, 1]}, {name: "Break", on: [0, 1, 1, 1]}
 ];
 const SCENE_SONG = [0, 1, 2, 2, 3, 2];     /* Song: each scene 4 bars */
-const ITALO = {LANE, SCENES, SCENE_SONG, ID, SOUNDS, SONG, CLAPS, BEATS, THEMES, setClaps, setBeat, setTheme, setKey, setLen, to64, PROGS, setProg, setProgOff, setBellKeys, progNames, progBars, allowedPcs, chordRoot, noteAt, tuneKick, findSound, applySound, setupSong, loadSection, writeSteps, partSteps};
+const ITALO = {LANE, SCENES, SCENE_SONG, ID, SOUNDS, SONG, CLAPS, BEATS, THEMES, setClaps, setBeat, setTheme, setKey, setLen, to64, PROGS, setProg, setProgOff, setScale, SCALES, setBellKeys, progNames, progBars, allowedPcs, chordRoot, noteAt, tuneKick, findSound, applySound, setupSong, loadSection, writeSteps, partSteps};
 if (typeof module !== "undefined") module.exports = ITALO;
