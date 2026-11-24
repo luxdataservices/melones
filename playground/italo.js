@@ -183,14 +183,14 @@ function spacerBar(bar2) {
     if (b === 4 || b === 12) n.push(SN, CL);
     else if (bar2 && (b === 10 || b === 14)) n.push(CL);
     n.push(HC);                                                   /* hats on every 16th */
-    s.push(b === 2 || b === 5 || (bar2 && (b === 10 || b === 12 || b === 14)) ? acc(n) : n);
+    s.push(b === 4 || b === 12 || (bar2 && (b === 10 || b === 14)) ? acc(n) : n);   /* the backbeats, and bar 2's baps */
   }
   return s;
 }
-/* "1986": transcribed from a one-bar loop (125.4 BPM): kick 1, 7, 9, 11; snare + clap on 2 and 4 with claps on 8,
- * 11, 12 and 16; open hats on 1 and 3, closed hats on the rest of the bar's busy half */
+/* "1986": from a one-bar loop (125.4 BPM), evened out: kick 1, 7, 9, 11; snare + clap on 2 and 4; a clap a 16th
+ * before beats 3, 4 and 1; open hats on the off-beat 8ths, closed hats on the beats */
 function bar1986() {
-  const P = {1: [K, HO], 3: [HO], 5: [SN, CL, HC], 7: [K], 8: [CL], 9: [K, HC], 10: [HC], 11: [K, CL, HC], 12: [CL, HC], 13: [SN, CL, HC], 16: [CL]};
+  const P = {1: [K, HC], 3: [HO], 5: [SN, CL, HC], 7: [K, HO], 8: [CL], 9: [K, HC], 11: [K, HO], 12: [CL], 13: [SN, CL, HC], 15: [HO], 16: [CL]};
   const s = [];
   for (let b = 1; b <= 16; b++) { const n = (P[b] || []).slice(); s.push(b === 5 || b === 13 ? acc(n) : n); }
   return s;
