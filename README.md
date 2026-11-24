@@ -1,3 +1,31 @@
+# Melones
+
+**Melones** is a fork of [Melodee](https://github.com/keremimo/melodee) for the M-VAVE FM-1, aimed at SID-style
+Italo disco, goth and Miami bass: a four-lane groovebox with SID sounds, chord progressions, a sidechain
+compressor, an "infinity clap" reverse reverb, rolls, beat repeat and one-tap vibes.
+
+**Play it in your browser:** [luxdataservices.github.io/melones](https://luxdataservices.github.io/melones/). It runs
+the real firmware engine compiled to WebAssembly, so nothing needs installing. Tap Play, pick a vibe, roll the 🎲.
+
+**Run it on your computer:**
+
+```sh
+git clone https://github.com/luxdataservices/melones
+cd melones
+./melones play      # opens the playground (Python 3)
+./melones update    # pulls the latest
+./melones build     # rebuilds the playground from source (clang)
+```
+
+> **The Melones firmware changes have not been tried on a real FM-1.** There is no Melones installer yet; the web
+> installer linked below installs upstream Melodee, not Melones. The playground is the way to use Melones for now.
+
+Melones's own changes are in `firmware/src/duck.c`, `clapfx.c`, `drumfx.c`, `partlp.c` and the Simmons, bell-key
+and arp-quantize additions; each is off by default, so with them off the firmware renders exactly as Melodee does
+(`tests/regress.c`). The playground is in `playground/`. Everything below is Melodee's README.
+
+---
+
 # Melodee
 
 [![License: GPL-3.0-only](https://img.shields.io/badge/license-GPL--3.0--only-blue.svg)](LICENSE)

@@ -14,4 +14,5 @@ open('italo.built.js', 'w').write(italo)
 b = base64.b64encode(gzip.compress(open('melones.wasm', 'rb').read(), 9)).decode()
 open('melones_italo.html', 'w').write(open('page2.html').read().replace('%%WASM%%', b).replace('%%ITALO%%', italo))
 PY
-echo "playground/melones_italo.html"
+cp melones_italo.html ../docs/index.html     # the copy GitHub Pages serves (Settings > Pages: main, /docs)
+echo "playground/melones_italo.html, docs/index.html"
