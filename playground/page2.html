@@ -21,7 +21,7 @@ h1{font:800 clamp(32px,5vw,48px)/1.05 Rubik,system-ui,sans-serif;margin:0 0 6px;
 .lede{margin:0 0 20px;max-width:64ch;color:var(--soft)}
 .dev{background:linear-gradient(180deg,var(--rind2),var(--rind) 10%,var(--rind) 90%,var(--rind3));border-radius:26px;padding:clamp(12px,2vw,24px);box-shadow:0 2px 0 #4d8a5e inset,0 -3px 0 #10241a inset,0 24px 50px -20px #0008;color:var(--cap)}
 .top{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.15fr);gap:clamp(12px,2vw,20px)}
-.screen{background:var(--lcd);border-radius:14px;padding:10px 14px;box-shadow:0 0 0 3px #0a120d,0 0 0 5px #3e7550;font-family:Silkscreen,monospace;color:var(--glow);display:flex;flex-direction:column;gap:4px;min-height:170px}
+.screen{background:var(--lcd);border-radius:14px;padding:10px 14px;box-shadow:0 0 0 3px #0a120d,0 0 0 5px #3e7550;font-family:Silkscreen,monospace;color:var(--glow);display:flex;flex-direction:column;gap:4px;min-height:0}
 .srow{display:flex;justify-content:space-between;gap:8px;font-size:13px}
 #sec{font-size:clamp(20px,3vw,26px);line-height:1.1;text-shadow:0 0 12px #ff8a3a66}
 .scope{position:relative;flex:1;min-height:90px}.scope canvas{position:absolute;inset:0;width:100%;height:100%}
@@ -104,6 +104,11 @@ input[type=text]{font:16px Rubik,system-ui,sans-serif;min-height:44px;border-rad
 .grid .rl{position:sticky;left:0;z-index:3;background:#22201d;padding-right:4px;align-self:stretch;display:flex;align-items:center;box-shadow:4px 0 6px -2px #0009}
 .grid .cell.bar{scroll-snap-align:start;scroll-margin-left:48px}
 .grid.roll .cell{height:14px}.grid.roll .rl.pr{line-height:14px}
+.pages{display:none;gap:4px;margin:0 0 6px}.pages .pg{flex:1;min-height:34px;border:0;border-radius:3px;background:#3a3733;color:#cfc7bb;font:600 15px "Share Tech Mono",monospace}
+.pages .pg.on{background:var(--acc);color:#1b1a18}.pages .pg.fol{flex:1.6;font-family:"Barlow Condensed",sans-serif;letter-spacing:.05em;text-transform:uppercase}
+@media(max-width:820px){.tab{flex-direction:column;align-items:stretch;padding:8px 4px 6px;font-size:14px;gap:6px;text-align:center}.tab .ms{justify-content:center}.tab .ms i{padding:3px 9px}
+  .pages{display:flex}.gridwrap{overflow:visible}.grid{width:auto;min-width:0}.grid .rl{position:static;box-shadow:none;font-size:9px}
+  .grid .cell{min-width:0}.grid:not(.roll) .cell{height:30px}.grid.roll .cell{height:16px}.grid.roll .rl.pr{line-height:16px}}
 </style>
 <style>
 /* CRUMAR: a crusty late-70s Italian panel. Worn beige backdrop; black matte panel between walnut end cheeks;
@@ -169,13 +174,12 @@ pre{background:#ece2c8;color:#231c14;box-shadow:inset 0 0 0 1px #b9aa88;border-r
     <div class="screen" aria-live="polite">
       <div class="srow"><span id="pos">BAR 1.1</span><span id="vox">VOICES 0/8</span></div>
       <div id="sec">INTRO</div>
-      <div class="scope"><canvas id="scope"></canvas></div>
       <div class="srow"><span id="bpmv2">124 BPM · A MINOR</span><span id="keysfor">KEYS: LEAD</span></div>
     </div>
     <div class="ctl">
       <div class="row"><button id="play">Play</button><label class="bpm">Tempo <input id="bpm" type="range" min="60" max="160" value="124"><span id="bpmv">124</span></label></div>
-      <div class="row"><label class="bpm" style="flex:0 1 auto">Root <select id="key" aria-label="Root note"></select></label><label class="bpm" style="flex:0 1 auto">Scale <select id="scale" aria-label="Scale"><option>Minor</option><option>Hijaz</option></select></label><label class="bpm" style="flex:0 1 auto">Progression <select id="prog" aria-label="Chord progression"></select></label><label class="bpm" style="flex:0 1 auto">Keyboard plays <select id="lock" aria-label="Which notes the keyboard plays"><option value="2" selected>Scale notes only</option><option value="1">Chord notes only</option><option value="0">Any note</option></select></label></div>
-      <div class="row" style="align-items:center;gap:14px;flex-wrap:wrap"><div id="wheel" style="font-family:'Barlow Condensed',sans-serif"></div><div class="chips" id="chords" aria-live="polite"></div></div>
+      <div class="row"><label class="bpm" style="flex:1 1 100%">Vibe <select id="vibe" aria-label="Vibe"></select></label><label class="bpm" style="flex:0 1 auto">Key <select id="key" aria-label="Root note"></select></label><label class="bpm" style="flex:0 1 auto">Scale <select id="scale" aria-label="Scale"><option>Minor</option><option>Hijaz</option></select></label><label class="bpm" style="flex:0 1 auto">Progression <select id="prog" aria-label="Chord progression"></select></label></div>
+      <div class="row chips" id="chords" aria-live="polite"></div>
       <div class="row"><label class="bpm" style="flex:0 1 auto">Length <select id="len" aria-label="Pattern length"><option value="16">16 steps (1 bar)</option><option value="32">32 steps (2 bars)</option><option value="64" selected>64 steps (4 bars)</option></select></label></div>
       <p class="note" style="margin:0;color:#cfe5d4">Every pattern is written for 4 bars; a shorter length plays its first one or two. The progression keeps moving from loop to loop.</p>
     </div>
@@ -227,7 +231,6 @@ function setPreset(t, k) {
   ensureSound(t, p.sound, true); writeTrack(t);
   buildLanes(); if (t === sel) buildSound();
 }
-const scopeBuf = new Float32Array(2048); let scopePos = 0;
 const ENUMS2 = {CST: ["ALL", "FLAM", "TRIPLET", "RATCHET", "BEATREP"], SWG: ["STRAIGHT", "52%", "54%", "56%", "MPC 58%", "60%", "62%", "64%", "TRIPLET", "DRUNK 70%"], LSW: ["FOLLOW", "STRAIGHT", "+ LIGHT", "+ MORE", "+ HEAVY"], LSY: ["FREE", "4 BAR", "2 BAR", "1/1", "1/2", "1/4", "1/8", "1/8T", "1/16", "1/16T", "1/32"], LTG: ["PER NOTE", "ON BEAT"], DMODE: ["TRIGGER", "COMP"], DKEY: ["DRUMS", "GHOST"], DON: ["ALL", "BEATS"], DEV: ["ALL", "2ND", "4TH"], WR: ["4 BARS", "2 BARS", "1 BAR", "1/2", "1/4"],
   ARATE: ["1/8", "1/16", "1/32", "16T", "8T"]};
 const warp = {depth: 30, rate: 2};        /* the bass's cutoff warp: LFO -> filter, synced (rate: index into WR) */
@@ -297,7 +300,7 @@ function onBoundary(idx) {       /* a bar's last step: the kick and bell to the 
   kickToBar((((idx + 1) % len >> 4) + progOff) & 3);
 }
 $("len").addEventListener("change", () => {
-  len = +$("len").value; I.setLen(len); progOff = 0; I.setProgOff(0);
+  len = +$("len").value; I.setLen(len); progOff = 0; I.setProgOff(0); pageBar = 0;
   for (let t = 0; t < 4; t++) writeTrack(t);
   buildLanes(); selectTrack(sel); refreshSecs(); lastPh = [];
 });
@@ -407,6 +410,11 @@ function applyMutes() {           /* a soloed lane plays, the rest wait; mute al
     lane.classList.toggle("dim", mutes[t] || (any && !solos[t]));
   }
 }
+document.addEventListener("click", e => {
+  const b = e.target.closest && e.target.closest(".pages .pg"); if (!b) return;
+  if (b.dataset.b === "f") { follow = !follow; showPage(pageBar); } else { follow = false; showPage(+b.dataset.b); }
+});
+let wasPaged = null; addEventListener("resize", () => { if (paged() !== wasPaged) { wasPaged = paged(); if (pageBar * 16 >= LENP()) pageBar = 0; showPage(pageBar); } });
 function buildTabs() {
   $("tabs").innerHTML = [0, 1, 2, 3].map(t => `<button class="tab${t === sel ? " on" : ""}" data-t="${t}" role="tab" aria-selected="${t === sel}"><span><span class="led" id="led${t}"></span> ${NAMES[t].replace(" / PAD", "")}</span><span class="ms"><i class="m${mutes[t] ? " on" : ""}" data-t="${t}" role="button" aria-label="Mute ${NAMES[t]}">M</i><i class="s${solos[t] ? " on" : ""}" data-t="${t}" role="button" aria-label="Solo ${NAMES[t]}">S</i></span></button>`).join("");
   for (const b of $("tabs").querySelectorAll(".tab")) b.addEventListener("click", e => {
@@ -438,7 +446,7 @@ function buildLanes() {
         <div class="b"><button class="latch${latch[t] ? " on" : ""}" data-t="${t}" aria-pressed="${latch[t]}">Latch</button><button class="steps${stepsOn[t] ? " on" : ""}" data-t="${t}" aria-pressed="${stepsOn[t]}">Steps</button></div>` : ""}
         <div class="b"><button class="kb${t === sel ? " on" : ""}" data-t="${t}">Keys</button><button class="mute${mutes[t] ? " on" : ""}" data-t="${t}" aria-pressed="${!!mutes[t]}">Mute</button><button class="solo${solos[t] ? " on" : ""}" data-t="${t}" aria-pressed="${!!solos[t]}">Solo</button></div>
         <div class="mini">${t && t !== 2 ? knobHtml(K.dk) : ""}${knobHtml(K.lv)}${knobHtml(K.cr)}${knobHtml(K.sw)}</div>${t === 1 ? `<div class="mini">${knobHtml(K.wp)}${knobHtml(K.wr)}</div>` : ""}${t === 0 ? `<div class="mini">${knobHtml(K.lp)}${knobHtml(K.lr)}</div>` : ""}${t === 2 ? `<div class="mini">${knobHtml(K.ar)}${knobHtml(K.ag)}</div>` : ""}</div>
-      <div class="gridwrap"${stepsOn[t] ? "" : ' style="opacity:.35"'}><div class="grid ${t ? "mel roll" : ""}" id="g${t}" style="grid-template-columns:44px repeat(${LENP()},minmax(26px,1fr))">${gridHtml(t)}</div></div></div>`;
+      <div class="gwrap">${pagesHtml()}<div class="gridwrap"${stepsOn[t] ? "" : ' style="opacity:.35"'}><div class="grid ${t ? "mel roll" : ""}" id="g${t}" style="grid-template-columns:${gridCols()}">${gridHtml(t)}</div></div></div></div>`;
   }).join("");
   laneKnobs.forEach(bindKnob);
   for (const s of $("lanes").querySelectorAll("select[data-t]")) s.addEventListener("change", () => {
@@ -471,10 +479,23 @@ function buildLanes() {
     if (t && c.dataset.p) rollToggle(t, +c.dataset.i, +c.dataset.p); else toggle(t, +c.dataset.i, c.dataset.r);
   });
 }
+/* phones: a bar (16 steps) at a time, picked with the bar buttons or following the playhead */
+const paged = () => matchMedia("(max-width: 820px)").matches;
+let pageBar = 0, follow = true;
+function stepRange() { return paged() ? [pageBar * 16, Math.min(LENP(), pageBar * 16 + 16)] : [0, LENP()]; }
+function pagesHtml() {
+  const n = LENP() / 16; if (n < 2) return "";
+  return `<div class="pages" role="group" aria-label="Bar">${Array.from({length: n}, (_, b) => `<button class="pg${b === pageBar ? " on" : ""}" data-b="${b}" aria-pressed="${b === pageBar}">${b + 1}</button>`).join("")}<button class="pg fol${follow ? " on" : ""}" data-b="f" aria-pressed="${follow}">Follow</button></div>`;
+}
+function drawLane(t) { const g = $("g" + t); if (!g) return; g.innerHTML = gridHtml(t); g.style.gridTemplateColumns = gridCols(); const pg = g.closest(".gwrap") && g.closest(".gwrap").querySelector(".pages"); if (pg) pg.outerHTML = pagesHtml(); lastPh[t] = undefined; drawn[t] = pageBar; }
+const drawn = [];
+function showPage(b) { pageBar = b; if (!$("g0")) return; drawLane(sel); }
+function gridCols() { const [a, z] = stepRange(); return paged() ? `40px repeat(${z - a},minmax(0,1fr))` : `44px repeat(${z - a},minmax(26px,1fr))`; }
 function gridHtml(t) {
-  const st = pat[cur][t].slice(0, LENP());
+  const [ra, rz] = stepRange(), all = pat[cur][t].slice(0, LENP()), st = all;
+  const inR = i => i >= ra && i < rz;
   const cls = i => `cell${i % 16 === 0 && i ? " bar" : ""}${i % 4 === 0 ? " beat" : ""}`;
-  if (t === 0) return DROWS.map(([nm, notes], r) => `<div class="rl">${nm}</div>` + st.map((v, i) => {
+  if (t === 0) return DROWS.map(([nm, notes], r) => `<div class="rl">${nm}</div>` + st.map((v, i) => { if (!inR(i)) return "";
     const on = Array.isArray(v) && v.some(n => notes.includes(n)), rl = on && v.roll && (!v.roll[4] || notes.includes(v.roll[4])) ? v.roll[0] : 0;
     return `<div class="${cls(i)}${on ? " on" + (DROWS[r][0] === "CLAP" ? " cl" : "") : ""}${rl ? " roll" : ""}" data-i="${i}" data-r="${r}" tabindex="-1" aria-label="${nm} step ${i + 1}${rl ? ", roll of " + rl : ""}">${rl ? `<span class="rn">${rl}</span>` : ""}</div>`;
   }).join("")).join("");
@@ -496,7 +517,7 @@ function gridHtml(t) {
   let h = "";
   for (let pch = hi; pch >= lo; pch--) {
     const bk = [1, 3, 6, 8, 10].includes(pch % 12);
-    h += `<div class="rl pr${pch % 12 === 0 ? " c" : ""}">${nn(pch)}</div>` + st.map((v, i) => {
+    h += `<div class="rl pr${pch % 12 === 0 ? " c" : ""}">${nn(pch)}</div>` + st.map((v, i) => { if (!inR(i)) return "";
       const k = at.get(pch + ":" + i);
       return `<div class="${cls(i)}${bk ? " bk" : ""}${k === "on" ? " on" : k === "tie" ? " tie" : ""}" data-i="${i}" data-p="${pch}" tabindex="-1" aria-label="${nn(pch)} step ${i + 1}${k ? ", note" : ""}"></div>`;
     }).join("");
@@ -543,17 +564,19 @@ function playheads() {
   for (let t = 0; t < 4; t++) {
     const idx = playing ? w.w_seqidx(t) : -1;
     if (lastPh[t] === idx) continue;
+    if (t !== sel) { lastPh[t] = idx; const led = $("led" + t), v = idx >= 0 ? pat[cur][t][idx] : null; if (led) led.classList.toggle("lit", v != null && !/^tie/.test(v) && !(Array.isArray(v) && !v.length)); continue; }
     const g = $("g" + t); if (!g) continue;
     for (const c of g.querySelectorAll(".ph")) c.classList.remove("ph");
     if (idx >= 0) for (const c of g.querySelectorAll(`[data-i="${idx}"]`)) c.classList.add("ph");
     lastPh[t] = idx;
     const led = $("led" + t), v = idx >= 0 ? pat[cur][t][idx] : null; if (led) led.classList.toggle("lit", v != null && !/^tie/.test(v) && !(Array.isArray(v) && !v.length));
   }
-  if (playing && Date.now() - userScrolled > 4000) {
+  if (playing && !paged() && Date.now() - userScrolled > 4000) {
     const gw = document.querySelector(`.lane[data-t="${sel}"] .gridwrap`), b16 = w.w_seqidx(sel) >> 4;
     if (gw && b16 !== lastScrollBar) { lastScrollBar = b16; const c = gw.querySelector(`.cell[data-i="${b16 * 16}"]`);
       if (c) { const x = c.offsetLeft - 48; if (x < gw.scrollLeft || x + 16 * 28 > gw.scrollLeft + gw.clientWidth) gw.scrollTo({left: Math.max(0, x), behavior: "smooth"}); } }
   }
+  if (playing && follow && paged()) { const pb = w.w_seqidx(sel) >> 4; if (pb !== pageBar) showPage(pb); }
   const bar = playing ? ((w.w_seqidx(1) >> 4) + progOff) & 3 : -1; if (bar !== progBar) { progBar = bar; status2(); }
   const half = playing ? w.w_seqidx(1) >> 3 : -1; if (half !== lastHalf) { lastHalf = half; keyLock(); if (manual.size && chordFollow(sel)) pushKeys(); }
 }
@@ -564,6 +587,7 @@ function selectTrack(t) {
   sel = t; w.w_sel(t); if (typeof keyLock === "function") keyLock();
   for (const l of document.querySelectorAll(".lane")) l.classList.toggle("sel", +l.dataset.t === t);
   for (const b of document.querySelectorAll(".tab")) { b.classList.toggle("on", +b.dataset.t === t); b.setAttribute("aria-selected", +b.dataset.t === t); }
+  if (paged() && drawn[t] !== pageBar) drawLane(t);
   for (const b of document.querySelectorAll("button.kb")) b.classList.toggle("on", +b.dataset.t === t);
   $("keysfor").textContent = "KEYS: " + NAMES[t].replace(" / PAD", "");
   oct = t === 1 ? -2 : t === 0 ? -2 : 0; w.w_octave(oct);
@@ -659,14 +683,14 @@ function start() {
   if (ready || !w) return;
   try { ctx = new AudioContext({sampleRate: 44100, latencyHint: "interactive"}); } catch (e) { ctx = new AudioContext(); }
   if (ctx.sampleRate !== 44100) err("Your browser runs audio at " + ctx.sampleRate + " Hz, so pitch and tempo will be slightly off from the FM-1.");
-  node = ctx.createScriptProcessor(1024, 0, 2);
+  node = ctx.createScriptProcessor(matchMedia("(pointer: coarse)").matches ? 2048 : 1024, 0, 2);   /* phones: more room for the page's own work */
   node.onaudioprocess = ev => {
     const L = ev.outputBuffer.getChannelData(0), R = ev.outputBuffer.getChannelData(1);
     for (let off = 0; off < L.length; off += 128) {
       if (playing) { const idx = w.w_seqidx(0); if ((idx & 15) === 15 && idx !== lastIdx) onBoundary(idx); lastIdx = idx; }
       riseTick(128);
       const f = new Float32Array(w.memory.buffer, w.w_render(128), 256);
-      for (let i = 0; i < 128; i++) { L[off + i] = f[2 * i]; R[off + i] = f[2 * i + 1]; scopeBuf[scopePos++ & 2047] = (f[2 * i] + f[2 * i + 1]) * 0.5; }
+      for (let i = 0; i < 128; i++) { L[off + i] = f[2 * i]; R[off + i] = f[2 * i + 1]; }
     }
   };
   node.connect(ctx.destination); ctx.resume(); ready = true;
@@ -682,39 +706,13 @@ function togglePlay() {
 $("play").addEventListener("click", togglePlay);
 const KEYS = ["C", "Db", "D", "Eb", "E", "F", "Gb", "G", "Ab", "A", "Bb", "B"];
 const ROOTS = KEYS, SOLF = ["Do", "Re♭", "Re", "Mi♭", "Mi", "Fa", "Sol♭", "Sol", "La♭", "La", "Si♭", "Si"];
-/* the scale wheel: the 12 notes round a circle, the root at the top, the scale as a shape, the chord now lit */
-function spell(pc, deg, rootPc) {               /* a scale note's name from the root's letter up (Db E F, not C# E F) */
-  const L = "CDEFGAB", NAT = [0, 2, 4, 5, 7, 9, 11], SL = ["Do", "Re", "Mi", "Fa", "Sol", "La", "Si"];
-  const rl = L.indexOf(KEYS[rootPc][0]), li = (rl + deg) % 7; let a = ((pc - NAT[li]) % 12 + 18) % 12 - 6;
-  const acc = a === -1 ? "♭" : a === 1 ? "♯" : a === -2 ? "𝄫" : a === 2 ? "𝄪" : "";
-  return [L[li] + acc, SL[li] + acc];
-}
-function wheel() {
-  const rootPc = (9 + keyShift + 12) % 12, sc = I.SCALES[$("scale").value], R = 78, cx = 110, cy = 116;
-  const lit = (I.allowedPcs(curStep(), 1) || []).map(x => (x + 9 + keyShift + 24) % 12);
-  const pos = pc => { const a = ((pc - rootPc + 12) % 12) * Math.PI / 6; return [cx + R * Math.sin(a), cy - R * Math.cos(a)]; };
-  const scalePcs = sc.map(x => (rootPc + x) % 12);
-  let g = `<circle cx="${cx}" cy="${cy}" r="${R}" fill="none" stroke="#5a554e" stroke-width="1"/>`;
-  g += `<polygon points="${scalePcs.map(pc => pos(pc).join(",")).join(" ")}" fill="#d9822b33" stroke="#d9822b" stroke-width="2" stroke-linejoin="round"/>`;
-  const ch = lit.slice().sort((a, b) => ((a - rootPc + 12) % 12) - ((b - rootPc + 12) % 12));
-  if ($("prog").selectedIndex > 0 || true) g += `<polygon points="${ch.map(pc => pos(pc).join(",")).join(" ")}" fill="#ff3b2a22" stroke="#ff3b2a" stroke-width="1.5"/>`;
-  for (let pc = 0; pc < 12; pc++) {
-    const [x, y] = pos(pc), k = scalePcs.indexOf(pc), on = k >= 0, isRoot = pc === rootPc, hot = lit.includes(pc);
-    const [nm, so] = on ? spell(pc, k, rootPc) : [KEYS[pc], ""];
-    const [lx, ly] = [cx + (R + 20) * (x - cx) / R, cy + (R + 20) * (y - cy) / R];
-    g += `<circle cx="${x}" cy="${y}" r="${isRoot ? 6 : hot ? 5 : on ? 3.5 : 2}" fill="${isRoot ? "#fff" : hot ? "#ff3b2a" : on ? "#d9822b" : "#5a554e"}"${hot ? ' style="filter:drop-shadow(0 0 4px #ff3b2a)"' : ""}/>`;
-    if (on) g += `<text x="${lx}" y="${ly - 2}" text-anchor="middle" font-size="12" font-weight="600" fill="${hot ? "#ff6a55" : "#efe6d4"}">${nm}</text><text x="${lx}" y="${ly + 9}" text-anchor="middle" font-size="8" fill="#9a948c">${so}</text>`;
-  }
-  g += `<text x="${cx}" y="${cy + 4}" text-anchor="middle" font-size="13" font-weight="700" fill="#efe6d4">${KEYS[rootPc]} ${$("scale").value}</text>`;
-  $("wheel").innerHTML = `<svg viewBox="0 0 220 230" width="220" height="230" role="img" aria-label="${KEYS[rootPc]} ${$("scale").value}: ${scalePcs.map((pc, k) => spell(pc, k, rootPc)[0]).join(" ")}">${g}</svg>`;
-}
 let keyShift = 0;
 let progBar = -1, lock = 2;
 function status2() {
   $("bpmv2").textContent = $("bpm").value + " BPM · " + KEYS[(9 + keyShift + 12) % 12] + " " + $("scale").value.toUpperCase();
   const on = $("prog").selectedIndex > 0, lit = progBar < 0 ? 0 : progBar;
   $("chords").innerHTML = on ? I.progBars(keyShift).map((c, i) => `<div class="chip${i === lit ? " lit" : ""}"><b>${c.rn}</b><span>${c.name}</span></div>`).join("") : "";
-  keyLock(); wheel();
+  keyLock();
 }
 function curStep() { return playing ? w.w_seqidx(sel || 1) : 0; }
 function keyLock() {               /* dim the keys a played note can't take now */
@@ -726,8 +724,27 @@ function kickToBar(bar) {          /* an 808 kick tuned to the key follows each 
 }
 $("prog").innerHTML = Object.keys(I.PROGS).map((k, i) => `<option value="${i}">${k}</option>`).join("");
 $("prog").addEventListener("change", () => { I.setProg(Object.keys(I.PROGS)[+$("prog").value]); progOff = 0; I.setProgOff(0); writeTrack(0); for (let t = 1; t < 4; t++) { writeTrack(t); $("g" + t).innerHTML = gridHtml(t); } lastPh = []; kickToBar(Math.max(0, progBar)); status2(); });
+/* VIBES: one tap sets the key, scale, chords, tempo, swing and all four lanes (then change anything) */
+const VIBES = {
+  "Italo night drive": {key: 9, scale: "Minor", prog: "i–VI–III–VII", bpm: 124, swing: 0, lanes: ["Italo", "Gallop", "Stabs", "Strings"]},
+  "Miami Hijaz booty": {key: 2, scale: "Hijaz", prog: "i–♭II (Phrygian)", bpm: 128, swing: 2, lanes: ["Miami", "808", "Pings", "Hook"]},
+  "Cairo Italo": {key: 4, scale: "Hijaz", prog: "i–VII–VI–V", bpm: 122, swing: 0, lanes: ["Spacer", "Octaves", "Drop", "Ghostcar"]},
+  "Goth bazaar": {key: 9, scale: "Hijaz", prog: "i–iv–♭II–V", bpm: 116, swing: 0, lanes: ["1986", "Hold", "Answer", "Bells"]},
+  "Hijaz trap": {key: 7, scale: "Hijaz", prog: "i–♭vi–i–♭II", bpm: 140, swing: 0, lanes: ["Trap", "808", "Riser", "Brass"]},
+};
+$("vibe").innerHTML = `<option value="">Pick a vibe…</option>` + Object.keys(VIBES).map(k => `<option>${k}</option>`).join("");
+$("vibe").addEventListener("change", () => {
+  const v = VIBES[$("vibe").value]; if (!v) return;
+  const set = (id, val) => { $(id).value = val; $(id).dispatchEvent(new Event("change")); };
+  set("key", v.key); set("scale", v.scale);
+  set("prog", String(Object.keys(I.PROGS).indexOf(v.prog)));
+  $("bpm").value = v.bpm; $("bpm").dispatchEvent(new Event("input"));
+  swing.g = v.swing; applySwing();
+  v.lanes.forEach((name, t) => { const k = I.LANE[KINDS[t]].findIndex(p => p.name === name); if (k >= 0) { preset[t] = k; const p = P(t); laneSteps[t] = I.to64(p.steps()).map(cp); laneOrig[t] = laneSteps[t].map(cp); ensureSound(t, p.sound, true); writeTrack(t); } });
+  buildLanes(); buildSound(); buildFx(); status2();
+});
 $("scale").addEventListener("change", () => { I.setScale($("scale").value); for (let t = 0; t < 4; t++) { writeTrack(t); $("g" + t).innerHTML = gridHtml(t); } lastPh = []; status2(); if (manual.size) pushKeys(); });
-$("lock").addEventListener("change", () => { lock = +$("lock").value; status2(); });
+
 $("key").innerHTML = ROOTS.map((k, i) => `<option value="${i}"${i === 9 ? " selected" : ""}>${k} · ${SOLF[i]}</option>`).join("");
 $("key").addEventListener("change", () => {            /* the song is in A minor: move the melodic tracks, never the drums */
   let d = (+$("key").value - 9 + 12) % 12; if (d > 6) d -= 12; keyShift = d;
@@ -738,18 +755,11 @@ $("key").addEventListener("change", () => {            /* the song is in A minor
 });
 $("bpm").addEventListener("input", () => { const v = +$("bpm").value; w.w_gset(ID.G_BPM, v); $("bpmv").textContent = v; status2(); });
 
-const cv = $("scope"), g = cv.getContext("2d");
-function frame() {
-  const W = cv.clientWidth, H = cv.clientHeight, dpr = devicePixelRatio || 1;
-  if (cv.width !== Math.round(W * dpr)) { cv.width = Math.round(W * dpr); cv.height = Math.round(H * dpr); }
-  g.setTransform(dpr, 0, 0, dpr, 0, 0); g.clearRect(0, 0, W, H);
-  let s = scopePos - 1200; for (let i = 0; i < 700; i++) { const a = scopeBuf[(s + i - 1) & 2047], b = scopeBuf[(s + i) & 2047]; if (a < 0 && b >= 0) { s += i; break; } }
-  g.strokeStyle = "#ff3b2a"; g.lineWidth = 2; g.shadowColor = "#ff3b2a"; g.shadowBlur = 0; g.beginPath();
-  for (let i = 0; i < 480; i++) { const x = i / 479 * W, y = H / 2 - scopeBuf[(s + i) & 2047] * H * 0.9; i ? g.lineTo(x, y) : g.moveTo(x, y); }
-  g.stroke(); g.shadowBlur = 0;
-  const idx = w.w_seqidx(0);
-  $("pos").textContent = playing ? `BAR ${Math.floor(idx / 16) + 1}.${Math.floor(idx % 16 / 4) + 1}` : "STOPPED";
-  $("vox").textContent = `VOICES ${w.w_voices()}/8`;
+let lastPos = "", lastVox = "";
+function frame() {             /* the screen's text (only when it changes) and the playheads */
+  const idx = w.w_seqidx(0), pos = playing ? `BAR ${Math.floor(idx / 16) + 1}.${Math.floor(idx % 16 / 4) + 1}` : "STOPPED", vox = `VOICES ${w.w_voices()}/8`;
+  if (pos !== lastPos) { $("pos").textContent = pos; lastPos = pos; }
+  if (vox !== lastVox) { $("vox").textContent = vox; lastVox = vox; }
   playheads();
   requestAnimationFrame(frame);
 }
