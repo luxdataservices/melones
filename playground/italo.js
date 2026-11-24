@@ -66,14 +66,44 @@ const SOUNDS = {
   ]
 };
 
-/* the demo: A minor, i - VI - VII - v (Am F G Em), 118 BPM */
-const CH = [[45, [57, 60, 64]], [41, [53, 57, 60]], [43, [55, 59, 62]], [40, [52, 55, 59]]];
+/* THEMES: a progression (a bass root and a chord per bar, in A minor; KEY transposes), the main bass figure and
+ * a lead melody written to it. The arps and the pad follow the chords, so every part agrees whatever the key. */
+const THEMES = {
+  "Night Drive": {note: "Am F G Em: gallop bass, the original hook", bass: "gallop",
+    ch: [[45, [57, 60, 64]], [41, [53, 57, 60]], [43, [55, 59, 62]], [40, [52, 55, 59]]],
+    mel: [[0, 76, 3], [3, 76, 2], [6, 74, 1], [7, 72, 2], [9, 69, 3], [12, 72, 2], [14, 74, 2],
+      [16, 72, 3], [19, 72, 2], [22, 69, 1], [23, 72, 2], [25, 77, 4], [29, 76, 3],
+      [32, 74, 3], [35, 74, 2], [38, 72, 1], [39, 74, 2], [41, 79, 4], [45, 77, 1], [46, 76, 2],
+      [48, 76, 6], [54, 74, 2], [56, 71, 2], [58, 76, 6]]},
+  "Spacer": {note: "Am Am G F: electro bass on the kick, a stuttering robot lead", bass: "electro",
+    ch: [[45, [57, 60, 64]], [45, [57, 60, 64]], [43, [55, 59, 62]], [41, [53, 57, 60]]],
+    mel: [[0, 76, 1], [2, 76, 1], [4, 74, 1], [5, 76, 2], [8, 69, 2], [11, 72, 1], [12, 72, 2], [14, 76, 2],
+      [16, 76, 1], [18, 76, 1], [20, 74, 1], [21, 76, 2], [24, 81, 3], [28, 76, 2], [30, 74, 2],
+      [32, 74, 1], [34, 74, 1], [36, 71, 1], [37, 74, 2], [40, 67, 2], [43, 71, 1], [44, 71, 2], [46, 74, 2],
+      [48, 72, 1], [50, 72, 1], [52, 69, 1], [53, 72, 2], [56, 77, 3], [60, 77, 2], [62, 72, 2]]},
+  "Hi-NRG": {note: "Am G F E: octave bass, a falling hook into the E major turn", bass: "octave",
+    ch: [[45, [57, 60, 64]], [43, [55, 59, 62]], [41, [53, 57, 60]], [40, [52, 56, 59]]],
+    mel: [[0, 81, 2], [2, 79, 2], [4, 76, 4], [8, 69, 2], [10, 72, 2], [12, 76, 4],
+      [16, 74, 2], [18, 71, 2], [20, 67, 4], [24, 71, 2], [26, 74, 2], [28, 79, 4],
+      [32, 72, 2], [34, 69, 2], [36, 65, 4], [40, 69, 2], [42, 72, 2], [44, 77, 4],
+      [48, 80, 4], [52, 76, 2], [54, 71, 2], [56, 76, 6], [62, 71, 2]]},
+  "Cosmic": {note: "Am Dm G C: long, soaring notes, gallop bass", bass: "gallop",
+    ch: [[45, [57, 60, 64]], [50, [53, 57, 62]], [43, [55, 59, 62]], [48, [55, 60, 64]]],
+    mel: [[0, 76, 6], [6, 74, 2], [8, 72, 4], [12, 71, 2], [14, 72, 2],
+      [16, 74, 6], [22, 72, 2], [24, 69, 8],
+      [32, 71, 4], [36, 74, 4], [40, 79, 6], [46, 77, 2],
+      [48, 76, 8], [56, 79, 4], [60, 76, 4]]}
+};
+let themeName = "Night Drive", CH = THEMES[themeName].ch;
+function setTheme(name) { if (THEMES[name]) { themeName = name; CH = THEMES[name].ch; } }
 const K = 36, SN = 38, CL = 39, HC = 42, HO = 46, TL = 45, TM = 47, TH = 50;
 function bassPattern(style) {           /* 64 steps of 16ths */
   const s = [];
   for (const [r] of CH) for (let i = 0; i < 16; i++) {
     const lo = r - 12, b = i % 4;
     if (style === "gallop") s.push(b === 1 ? null : b === 3 ? lo + 12 : lo);       /* da - da DUM: the Italo gallop */
+    else if (style === "electro") s.push([lo, null, null, lo, null, null, lo + 12, lo, lo, null, lo + 7, lo + 12, null, null, lo + 12, null][i]);   /* on the Spacer kick */
+    else if (style === "octave") s.push(i % 2 ? lo + 12 : lo);
     else if (style === "eighth") s.push(i % 2 ? null : (i % 4 ? lo + 12 : lo));
     else s.push(i % 2 ? lo + 12 : lo);                                              /* straight octaves */
   }
@@ -92,8 +122,8 @@ function arpPattern(style) {
   }
   return s;
 }
-/* [step, note, length] */
-const MELODY = [
+/* [step, note, length]: the Night Drive hook (THEMES carries each theme's own) */
+const MELODY_ND = [
   [0, 76, 3], [3, 76, 2], [6, 74, 1], [7, 72, 2], [9, 69, 3], [12, 72, 2], [14, 74, 2],
   [16, 72, 3], [19, 72, 2], [22, 69, 1], [23, 72, 2], [25, 77, 4], [29, 76, 3],
   [32, 74, 3], [35, 74, 2], [38, 72, 1], [39, 74, 2], [41, 79, 4], [45, 77, 1], [46, 76, 2],
@@ -111,7 +141,7 @@ function setClaps(name) { if (CLAPS[name]) clapStyle = name; }
 function setBeat(name) { if (BEATS[name]) beatStyle = name; }
 /* "Spacer": transcribed from a recreation of Charlie's Spacer Woman (1983) loop, 123.75 BPM, two bars:
  * electro kick on 1, 8, 9, 11; snare + clap on 2 and 4; 16th hats accented on steps 3 and 6;
- * bar 2 ends in a run of six 16th claps (accents on 13 and 15) */
+ * bar 2 ends bap-bap-bap: three 8th-note claps on steps 11, 13 and 15, the hats thinning to 8ths under them */
 function acc(a) { a.acc = 1; return a; }
 function spacerBar(bar2) {
   const s = [];
@@ -119,9 +149,9 @@ function spacerBar(bar2) {
     const n = [];
     if ([0, 7, 8, 10].includes(b)) n.push(K);
     if (b === 4 || b === 12) n.push(SN, CL);
-    else if (bar2 && b >= 10) n.push(CL);
-    n.push(HC);
-    s.push(b === 2 || b === 5 || (bar2 && (b === 12 || b === 14)) ? acc(n) : n);
+    else if (bar2 && (b === 10 || b === 14)) n.push(CL);
+    if (!bar2 || b < 6 || (b % 2 === 0 && b < 15)) n.push(HC);   /* bar 2 thins to 8ths, then the baps stand alone */
+    s.push(b === 2 || b === 5 || (bar2 && (b === 10 || b === 12 || b === 14)) ? acc(n) : n);
   }
   return s;
 }
@@ -206,7 +236,7 @@ function writeSteps(w, t, notes, gate) {
 function partSteps(kind, part) {
   if (!part) return new Array(64).fill(null);
   if (kind === "drums") return drumPattern(part);
-  if (kind === "bass") return bassPattern(part);
+  if (kind === "bass") return bassPattern(part === "gallop" ? THEMES[themeName].bass : part);
   if (kind === "arp") return arpPattern(part);
   if (part === "strings") {
     const s = [];
@@ -214,7 +244,7 @@ function partSteps(kind, part) {
     return s;
   }
   const s = new Array(64).fill(null);
-  for (const [st, n, len] of MELODY) { s[st] = n; for (let i = 1; i < len; i++) s[st + i] = "tie"; }
+  for (const [st, n, len] of THEMES[themeName].mel) { s[st] = n; for (let i = 1; i < len; i++) s[st + i] = "tie"; }
   return s;
 }
 function loadSection(w, sec, chosen) {          /* chosen: the sound names per track (the user's picks) */
@@ -235,5 +265,5 @@ function setupSong(w, chosen) {
   SONG.duck.forEach((a, t) => w.w_duck(t, a)); w.w_duckrel(SONG.duckRel);
   w.w_clap(SONG.clap[0], SONG.clap[1], SONG.clap[2], SONG.clap[3]);
 }
-const ITALO = {ID, SOUNDS, SONG, CLAPS, BEATS, setClaps, setBeat, findSound, applySound, setupSong, loadSection, writeSteps, partSteps};
+const ITALO = {ID, SOUNDS, SONG, CLAPS, BEATS, THEMES, setClaps, setBeat, setTheme, findSound, applySound, setupSong, loadSection, writeSteps, partSteps};
 if (typeof module !== "undefined") module.exports = ITALO;

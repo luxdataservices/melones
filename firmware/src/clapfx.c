@@ -13,7 +13,7 @@
  *    wash's onset, lands on the expected clap: a crescendo into the hit. A clap that does not come still had its
  *    swell, as a reverse reverb on tape would.
  *  - EVERY (1, 2, 4, 8): only every Nth clap from the start of play crashes: one swell into it and its wash,
- *    then quiet until the next. A clap within 0.3 beat of the one before is a roll hit: it does not count, and
+ *    then quiet until the next. A clap within 0.6 beat of the one before is a roll hit (16th or 8th runs): it does not count, and
  *    while the room is heard it goes into the wash too.
  *  - Timing: each crashing clap records the start of its own wash and plays it reversed to end on the next
  *    crashing clap, expected one cycle later (the time between the last two): any pattern, however irregular,
@@ -93,7 +93,7 @@ static void clapfx_block(uint32_t n)
     if (cfx.trig) {
         uint32_t bpm = (uint32_t)clamp(song.g[G_BPM], 40, 240), beat = FS * 60u / bpm;
         uint32_t sw = (uint32_t)(FS / 20u) + (uint32_t)cfx.swell * (CFX_SW - FS / 20u) / 127u;
-        int roll = cfx.last_hit && cfx.now - cfx.last_hit < beat * 3u / 10u;
+        int roll = cfx.last_hit && cfx.now - cfx.last_hit < beat * 6u / 10u;   /* 16ths and 8ths: one roll */
         cfx.trig = 0;
         cfx.last_hit = cfx.now ? cfx.now : 1u;
         if (roll) {                            /* a roll hit: into the wash while it is heard */
