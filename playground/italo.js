@@ -577,45 +577,16 @@ function mutateMelody(steps, seed) {        /* one to three notes up or down the
   }
   return s;
 }
+/* the lanes start empty: each pattern gets built one by one (the old ones are in the repo's history); Gen writes a
+ * fresh lead melody when it's picked */
+const empty = () => new Array(64).fill(null);
 const LANE = {
-  drums: [
-    {name: "Italo", sound: "SID DIGI KIT", steps: () => italoBar()},
-    {name: "Spacer", sound: "SID DIGI KIT", steps: () => [...spacerBar(0), ...spacerBar(1)], bpm: 124},
-    {name: "Disco", sound: "SIMMONS KIT", steps: () => discoBars(), bpm: 122},
-    {name: "Miami", sound: "808 BOOM", steps: () => miamiBar(), bpm: 126},
-    {name: "Trap", sound: "808 KIT", steps: () => [...trapBar(0), ...trapBar(1), ...trapBar(0), ...trapBar(2)], bpm: 140}
-  ],
-  bass: [
-    {name: "Octaves", sound: "BODY HEAT", steps: () => Array.from({length: 16}, (_, i) => i % 2 ? 45 : 33)},
-    {name: "Gallop", sound: "BODY HEAT", steps: () => Array.from({length: 16}, (_, i) => i % 4 === 1 ? null : i % 4 === 3 ? 45 : 33)},
-    {name: "Electro", sound: "MONEY BASS", steps: () => [33, null, null, 33, null, null, 45, 33, 33, null, 40, 45, null, null, 45, null]},
-    {name: "Hold", sound: "1986 BASS", steps: () => bar([[0, 33, 12], [12, 31, 4]])},
-    {name: "808", sound: "808 ROLL", steps: () => [   /* long 808s on Trap's kicks, sliding: rings until the next */
-      ...bar([[0, 33, 7], [7, 33, 3, 1], [10, 36, 6]]),
-      ...bar([[0, 33, 3], [3, 33, 7, 1], [10, 31, 1], [11, 31, 5, 1]]),
-      ...bar([[0, 33, 7], [7, 33, 3, 1], [10, 36, 6]]),
-      ...bar([[0, 33, 6, 1], [6, 45, 4, 1], [10, 40, 6, 1]])]}
-  ],
-  arp: [   /* stabs: quiet bars that answer at their ends, the fourth bar a fill (A minor; the progression moves them) */
-    {name: "Stabs", sound: "CRYSTAL ARP", steps: () => arp4([[13, 76], [14, 81], [15, 84]], [[10, 76], [11, 81], [12, 84], [13, 88], [14, 84], [15, 93]])},
-    {name: "Drop", sound: "LASER ARP", steps: () => arp4([[12, 93], [13, 88], [14, 84], [15, 81]], [[8, 93], [9, 88], [10, 84], [11, 81], [12, 76], [13, 72], [14, 69], [15, 57]])},
-    {name: "Pings", sound: "TWINKLE", steps: () => arp4([[14, 69], [15, 81]], [[6, 69], [7, 81], [10, 69], [11, 81], [14, 69], [15, 93]], [[11, 81], [14, 69], [15, 81]])},
-    {name: "Answer", sound: "SYNC ARP", steps: () => arp4([[6, 81], [7, 84], [14, 76], [15, 72]], [[6, 81], [7, 84], [12, 88], [13, 84], [14, 81], [15, 76]])},
-    {name: "Riser", sound: "LASER ARP", steps: () => arp4([[15, 81]], [[8, 69], [9, 72], [10, 76], [11, 81], [12, 84], [13, 88], [14, 93], [15, 96]])}
-  ],
-  lead: [
-    {name: "Gen", sound: "GHOSTCAR", steps: () => genMelody(Math.floor(Math.random() * 4294967296))},
-    {name: "Strings", sound: "VELVET STRINGS", gate: 120, steps: () => bar([[0, A, 16]])},
-    {name: "Hook", sound: "CYBER LEAD", steps: () => bar([[0, 76, 3], [3, 76, 3], [6, 74, 1], [7, 72, 2], [9, 69, 3], [12, 72, 2], [14, 74, 2]])},
-    {name: "Ghostcar", sound: "GHOSTCAR", steps: () => bar([[0, 69, 2], [2, 67, 2], [4, 65, 2], [6, 64, 2], [8, 69, 2], [10, 64, 2], [12, 65, 2], [14, 74, 1], [15, 71, 1]])},
-    {name: "Bells", sound: "STOP PULSE", steps: () => bar([[0, 76, 3], [3, 74, 1], [4, 72, 6], [10, 69, 2], [12, 72, 4]])},
-    {name: "Brass", sound: "HI-NRG BRASS", steps: () => bar([[2, A, 1], [6, A, 1], [10, A, 1], [14, A, 1]])}
-  ]
+  drums: [{name: "Empty", sound: "SID DIGI KIT", steps: empty}],
+  bass: [{name: "Empty", sound: "BODY HEAT", steps: empty}],
+  arp: [{name: "Empty", sound: "CRYSTAL ARP", steps: empty}],
+  lead: [{name: "Empty", sound: "GHOSTCAR", steps: empty},
+         {name: "Gen", sound: "GHOSTCAR", steps: () => genMelody(Math.floor(Math.random() * 4294967296))}]
 };
-for (const base of LANE.drums.slice()) for (const code of ["rk", "dc", "hh", "jz"]) {
-  if (base.name === "Disco" && code === "dc") continue;
-  LANE.drums.push({name: `${base.name}-${code}-1`, sound: base.sound, steps: () => styleVariant(base, code), group: base.name});
-}
 /* scenes: which lanes play */
 const SCENES = [
   {name: "Intro", on: [1, 1, 0, 0]}, {name: "Build", on: [1, 1, 1, 0]}, {name: "Full", on: [1, 1, 1, 1]}, {name: "Break", on: [0, 1, 1, 1]}
