@@ -318,51 +318,32 @@ function setKey(k) { KEY = k | 0; }
 /* PROGRESSIONS: the melodic lanes walk a chord progression over the 4 bars, one chord a bar (a 5-chord one splits
  * the last bar). Each chord moves the A minor patterns diatonically (steps along A natural minor, so Am's A-C-E
  * becomes F-A-C on VI), the shortest way round; a major V raises G to G# (harmonic minor). Drums never move. */
-/* a chord: d scale steps from i, acc the accidentals on the scale degrees it lands on (0 = A .. 6 = G): */
-const I_ = {d: 0, rn: "i"}, VI = {d: -2, rn: "VI"}, III = {d: 2, rn: "III"}, VII = {d: -1, rn: "VII"}, iv = {d: 3, rn: "iv"},
-  V = {d: -3, acc: {6: 1}, rn: "V"},                      /* E G# B: the harmonic minor's major V */
-  bII = {d: 1, acc: {1: -1}, rn: "♭II"},                  /* Bb D F: the Phrygian / Neapolitan */
-  bvi = {d: -2, acc: {0: -1}, rn: "♭vi"},                 /* F Ab C: the minor six, the horror-film one */
-  viio = {d: -1, acc: {6: 1}, rn: "vii°"},                /* G# B D: diminished, wants to fall onto i */
-  ivo = {d: 3, acc: {3: 1, 5: 1}, rn: "♯iv°"},            /* D# F# A: the tritone away */
-  IV = {d: 3, acc: {5: 1}, rn: "IV"},                     /* D F# A: the Dorian major four */
-  IIIaug = {d: 2, acc: {6: 1}, rn: "III+"};               /* C E G#: the harmonic minor's creeping augmented */
-const PROGS = {   /* most played first (a best guess from pop, disco and film): the mood in MOODS */
-  "Off": [I_, I_, I_, I_],
-  "i–VI–III–VII": [I_, VI, III, VII],
-  "i–V–VI–iv": [I_, V, VI, iv],                  /* in a major key: I–V–vi–IV, pop's most played */
-  "i–VII–VI–V": [I_, VII, VI, V],
-  "i–VI–VII–i": [I_, VI, VII, I_],               /* the space-synth climb home (Laserdance) */
-  "i–VI (vamp)": [I_, I_, VI, VI],               /* two chords, a bar... two each: trap, Miami, freestyle */
-  "i–VI–iv–V": [I_, VI, iv, V],
-  "i–V–VI–III–iv": [I_, V, VI, [III, iv]],
-  "i–IV–VI–V (Dorian)": [I_, IV, VI, V],
-  "i–♭II (Phrygian)": [I_, bII, I_, bII],
-  "i–iv–♭II–V": [I_, iv, bII, V],
-  "i–III+–VI–V": [I_, IIIaug, VI, V],
-  "i–♭vi–i–♭II": [I_, bvi, I_, bII],
-  "i–vii°–♭vi–V": [I_, viio, bvi, V],
-  "i–♯iv°–iv–V": [I_, ivo, iv, V],
+const MINOR = [0, 2, 3, 5, 7, 8, 10];        /* A natural minor, semitones above A: the patterns' own scale */
+/* PROGRESSIONS, a short list a scale: each chord a step of the scale (0 home .. 6), always one of that scale's own
+ * major or minor triads (nothing diminished, nothing borrowed), one a bar over four bars; the scale is the flavour
+ * (Harmonic minor's major V, Phrygian's flat II, Dorian's major IV, Mixolydian's flat VII). Most played first. */
+const SCALE_PROGS = {
+  "Minor": [["🥹", "i–VI–III–VII", [0, 5, 2, 6]], ["🤩", "i–VI–VII–i", [0, 5, 6, 0]], ["😑", "i–VI", [0, 0, 5, 5]],
+            ["🥺", "i–iv–VII–III", [0, 3, 6, 2]], ["😔", "i–VII–VI–VII", [0, 6, 5, 6]], ["😢", "i–iv–v–i", [0, 3, 4, 0]]],
+  "Major": [["😊", "I–V–vi–IV", [0, 4, 5, 3]], ["🥰", "I–vi–IV–V", [0, 5, 3, 4]], ["😌", "I–IV–vi–V", [0, 3, 5, 4]],
+            ["😄", "I–IV–V–IV", [0, 3, 4, 3]], ["🥲", "vi–IV–I–V", [5, 3, 0, 4]]],
+  "Dorian": [["😎", "i–IV", [0, 0, 3, 3]], ["😏", "i–IV–i–VII", [0, 3, 0, 6]], ["🙂", "i–ii–IV–i", [0, 1, 3, 0]]],
+  "Phrygian": [["😈", "i–II", [0, 0, 1, 1]], ["👿", "i–II–III–II", [0, 1, 2, 1]], ["😠", "i–vii–VI–II", [0, 6, 5, 1]]],
+  "Lydian": [["😇", "I–II", [0, 0, 1, 1]], ["🤩", "I–II–vi–I", [0, 1, 5, 0]]],
+  "Mixolydian": [["😏", "I–VII–IV–I", [0, 6, 3, 0]], ["🤠", "I–VII", [0, 0, 6, 6]], ["😁", "I–IV–VII–IV", [0, 3, 6, 3]]],
+  "Harmonic minor": [["😨", "i–VI–iv–V", [0, 5, 3, 4]], ["😱", "i–iv–V–i", [0, 3, 4, 0]], ["😰", "i–VI–V", [0, 0, 5, 4]]],
+  "Melodic minor": [["🤔", "i–IV–V–i", [0, 3, 4, 0]], ["🧐", "i–ii–V–i", [0, 1, 4, 0]]],
 };
-const MOODS = {
-  "i–VI–III–VII": "🥹",        /* bittersweet: the sad song you dance to */
-  "i–V–VI–iv": "😊",           /* lifting (in minor: bittersweet) */
-  "i–VI–VII–i": "🤩",          /* soaring, starry */
-  "i–VI (vamp)": "😑",         /* hypnotic */
-  "i–VII–VI–V": "😤",          /* the Andalusian walk down: dramatic */
-  "i–VI–iv–V": "😔",           /* brooding, pulled home by the V */
-  "i–V–VI–III–iv": "🥺",       /* yearning */
-  "i–IV–VI–V (Dorian)": "😎",  /* cool, a little bright */
-  "i–♭II (Phrygian)": "😈",    /* sinister */
-  "i–iv–♭II–V": "😰",          /* tense */
-  "i–III+–VI–V": "😨",         /* eerie */
-  "i–♭vi–i–♭II": "😱",         /* horror */
-  "i–vii°–♭vi–V": "🤪",        /* unhinged */
-  "i–♯iv°–iv–V": "👹",         /* evil */
-};
-const MINOR = [0, 2, 3, 5, 7, 8, 10];        /* A natural minor, semitones above A */
+const PROGS = {"Off": [{d: 0}, {d: 0}, {d: 0}, {d: 0}]}, MOODS = {}, PROG_RN = {};
+for (const [sc, list] of Object.entries(SCALE_PROGS)) for (const [mood, rn, degs] of list) {
+  const id = sc + ": " + rn;                    /* a step above the fourth goes down instead (the register stays) */
+  PROGS[id] = degs.map(g => ({d: g > 3 ? g - 7 : g})); MOODS[id] = mood; PROG_RN[id] = rn;
+}
+const progsFor = sc => (SCALE_PROGS[sc] || []).map(([, rn]) => sc + ": " + rn);
 let PROG = PROGS.Off;
-function setProg(name) { PROG = PROGS[name] || PROGS.Off; }
+let PROG_ID = "Off";
+function setProg(name) { PROG = PROGS[name] || PROGS.Off; PROG_ID = PROGS[name] ? name : "Off"; }
+function chordsOf(id, key) { return (PROGS[id] || []).map(c => chordName(c, key)); }
 let PROG_OFF = 0;                            /* a loop shorter than 4 bars: the bar of the progression it starts on */
 function setProgOff(n) { PROG_OFF = n & 3; }
 function chordAt(i) { const c = PROG[((i >> 4) + PROG_OFF) & 3]; return Array.isArray(c) ? c[(i & 15) < 8 ? 0 : 1] : c; }
@@ -371,22 +352,14 @@ function chordAt(i) { const c = PROG[((i >> 4) + PROG_OFF) & 3]; return Array.is
 const SCALES = {
   "Minor": [0, 2, 3, 5, 7, 8, 10], "Major": [0, 2, 4, 5, 7, 9, 11], "Dorian": [0, 2, 3, 5, 7, 9, 10],
   "Phrygian": [0, 1, 3, 5, 7, 8, 10], "Lydian": [0, 2, 4, 6, 7, 9, 11], "Mixolydian": [0, 2, 4, 5, 7, 9, 10],
-  "Locrian": [0, 1, 3, 5, 6, 8, 10], "Harmonic minor": [0, 2, 3, 5, 7, 8, 11], "Melodic minor": [0, 2, 3, 5, 7, 9, 11]
+  "Harmonic minor": [0, 2, 3, 5, 7, 8, 11], "Melodic minor": [0, 2, 3, 5, 7, 9, 11]
 };
 let SC = SCALES.Minor;
 function setScale(name) { SC = SCALES[name] || SCALES.Minor; }
 function toScale(m) { const pc = ((m - 9) % 12 + 12) % 12, k = MINOR.indexOf(pc); return k >= 0 ? m + SC[k] - MINOR[k] : m; }
 /* the progressions' chromatic chords (bII, bvi, vii°, the major V ...) are A natural minor's: in another scale a
  * chord is the scale's own triad on that step (its accidentals dropped), so nothing fights the scale */
-const triadDim = d => { const r = toScale(chordMove0(57, {d})), t3 = ((toScale(chordMove0(60, {d})) - r) % 12 + 12) % 12, t5 = ((toScale(chordMove0(64, {d})) - r) % 12 + 12) % 12; return (t3 === 3 && t5 === 6) || (t3 === 4 && t5 === 8); };   /* diminished or augmented */
-/* ... and a diminished triad there (Major's vii°, Dorian's vi°) gives way to the chord a third below (V, IV), which
- * shares two of its notes; Locrian, diminished at home, is left as it is */
-const own = c => {
-  if (!c || SC === SCALES.Minor) return c;
-  const o = {d: c.d, rn: c.rn};
-  for (let k = 0; k < 3 && SC !== SCALES.Locrian && triadDim(o.d); k++) o.d -= 2;   /* until it's a plain major or minor */
-  return o;
-};
+const own = c => c;                          /* (the chords are the scale's own: nothing to swap) */
 function chordMove(n, c) { return toScale(chordMove0(n, own(c))); }
 function chordMove0(n, c) {                  /* a note of the A minor pattern, moved to chord c (still in minor) */
   if (!c || (!c.d && !c.acc)) return n;
@@ -406,7 +379,10 @@ function progBars(key) {                     /* per bar: its numeral(s) and chor
     const up = t3 === 4 ? RN[deg].toUpperCase() : RN[deg];
     return up + (t5 === 6 ? "°" : t5 === 8 ? "+" : "");
   };
-  return PROG.map(c => { const a = Array.isArray(c) ? c : [c]; return {rn: a.map(rnOf).join(" / "), name: a.map(x => chordName(x, key)).join(" / ")}; });
+  /* the numerals as the progression spells them, matched to its chords in order of first use (i–VI over i i VI VI) */
+  const rns = (PROG_RN[PROG_ID] || "").split("–"), firsts = [];
+  for (const c of PROG) if (!firsts.includes(c.d)) firsts.push(c.d);
+  return PROG.map(c => ({rn: rns[firsts.indexOf(c.d)] || "", name: chordName(c, key)}));
 }
 /* the pitch classes (0 = A, before KEY) a played note may take at step i: LOCK 1 CHORD (the chord of that step),
  * 2 SCALE (A natural minor, and G# under a major V), 0 OFF: all */
@@ -419,11 +395,14 @@ function allowedPcs(i, lock) {
 }
 const chordRoot = i => chordMove(57, chordAt(i)) - 57;   /* semitones the chord's root sits from A */
 function progNames(key) { return PROG.map(c => Array.isArray(c) ? c.map(x => chordName(x, key)).join("/") : chordName(c, key)); }
-function chordName(c, key) {                 /* "Am", "Bb", "G#dim", "A+" ... in the current key */
-  const N = ["C", "C#", "D", "Eb", "E", "F", "F#", "G", "Ab", "A", "Bb", "B"], S = ["C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"];
-  const o = own(c), deg = ((o.d % 7) + 7) % 7, up = o.acc && o.acc[deg] > 0;
+function chordName(c, key) {                 /* "Cm", "Db", "F#m" ... spelled from the scale's letters up from the key */
+  const L = "CDEFGAB", NAT = [0, 2, 4, 5, 7, 9, 11], KN = ["C", "Db", "D", "Eb", "E", "F", "F#", "G", "Ab", "A", "Bb", "B"];
   const r = chordMove(57, c), t3 = ((chordMove(60, c) - r) % 12 + 12) % 12, t5 = ((chordMove(64, c) - r) % 12 + 12) % 12;
-  return (up ? S : N)[((r + key) % 12 + 12) % 12] + (t3 === 3 ? (t5 === 6 ? "dim" : "m") : t5 === 8 ? "+" : "");
+  const pc = ((r + key) % 12 + 12) % 12, tonic = ((9 + key) % 12 + 12) % 12, deg = (((c.d || 0) % 7) + 7) % 7;
+  const li = (L.indexOf(KN[tonic][0]) + deg) % 7, a = ((pc - NAT[li]) % 12 + 18) % 12 - 6;
+  let nm = L[li] + ({"-2": "bb", "-1": "b", "1": "#", "2": "##"}[a] || "");
+  if (a <= -2 || a >= 2 || ["Fb", "Cb", "E#", "B#"].includes(nm)) nm = ["C", "Db", "D", "Eb", "E", "F", "F#", "G", "Ab", "A", "Bb", "B"][pc];   /* read-friendly */
+  return nm + (t3 === 3 ? (t5 === 6 ? "dim" : "m") : t5 === 8 ? "+" : "");
 }
 let BELLKEYS = 0;                     /* the drum kit's cowbell plays in tune (808 kits; the firmware's BELL KEYS) */
 function setBellKeys(on) { BELLKEYS = on ? 1 : 0; }
@@ -597,5 +576,5 @@ const SCENES = [
   {name: "Intro", on: [1, 1, 0, 0]}, {name: "Build", on: [1, 1, 1, 0]}, {name: "Full", on: [1, 1, 1, 1]}, {name: "Break", on: [0, 1, 1, 1]}
 ];
 const SCENE_SONG = [0, 1, 2, 2, 3, 2];     /* Song: each scene 4 bars */
-const ITALO = {LANE, SCENES, SCENE_SONG, ID, SOUNDS, SONG, CLAPS, BEATS, THEMES, setClaps, setBeat, setTheme, setKey, setLen, to64, PROGS, MOODS, setProg, setProgOff, setScale, SCALES, setBellKeys, progNames, progBars, allowedPcs, chordRoot, noteAt, tuneKick, findSound, applySound, setupSong, loadSection, writeSteps, partSteps};
+const ITALO = {LANE, SCENES, SCENE_SONG, ID, SOUNDS, SONG, CLAPS, BEATS, THEMES, setClaps, setBeat, setTheme, setKey, setLen, to64, PROGS, MOODS, SCALE_PROGS, progsFor, chordsOf, setProg, setProgOff, setScale, SCALES, setBellKeys, progNames, progBars, allowedPcs, chordRoot, noteAt, tuneKick, findSound, applySound, setupSong, loadSection, writeSteps, partSteps};
 if (typeof module !== "undefined") module.exports = ITALO;
