@@ -327,20 +327,38 @@ const I_ = {d: 0, rn: "i"}, VI = {d: -2, rn: "VI"}, III = {d: 2, rn: "III"}, VII
   ivo = {d: 3, acc: {3: 1, 5: 1}, rn: "♯iv°"},            /* D# F# A: the tritone away */
   IV = {d: 3, acc: {5: 1}, rn: "IV"},                     /* D F# A: the Dorian major four */
   IIIaug = {d: 2, acc: {6: 1}, rn: "III+"};               /* C E G#: the harmonic minor's creeping augmented */
-const PROGS = {
+const PROGS = {   /* most played first (a best guess from pop, disco and film): the mood in MOODS */
   "Off": [I_, I_, I_, I_],
   "i–VI–III–VII": [I_, VI, III, VII],
+  "i–V–VI–iv": [I_, V, VI, iv],                  /* in a major key: I–V–vi–IV, pop's most played */
   "i–VII–VI–V": [I_, VII, VI, V],
-  "i–V–VI–III–iv": [I_, V, VI, [III, iv]],
-  /* the evil ones */
-  "i–♭II (Phrygian)": [I_, bII, I_, bII],
-  "i–♭vi–i–♭II": [I_, bvi, I_, bII],
-  "i–iv–♭II–V": [I_, iv, bII, V],
+  "i–VI–VII–i": [I_, VI, VII, I_],               /* the space-synth climb home (Laserdance) */
+  "i–VI (vamp)": [I_, I_, VI, VI],               /* two chords, a bar... two each: trap, Miami, freestyle */
   "i–VI–iv–V": [I_, VI, iv, V],
+  "i–V–VI–III–iv": [I_, V, VI, [III, iv]],
+  "i–IV–VI–V (Dorian)": [I_, IV, VI, V],
+  "i–♭II (Phrygian)": [I_, bII, I_, bII],
+  "i–iv–♭II–V": [I_, iv, bII, V],
+  "i–III+–VI–V": [I_, IIIaug, VI, V],
+  "i–♭vi–i–♭II": [I_, bvi, I_, bII],
   "i–vii°–♭vi–V": [I_, viio, bvi, V],
   "i–♯iv°–iv–V": [I_, ivo, iv, V],
-  "i–III+–VI–V": [I_, IIIaug, VI, V],
-  "i–IV–VI–V (Dorian)": [I_, IV, VI, V],
+};
+const MOODS = {
+  "i–VI–III–VII": "🥹",        /* bittersweet: the sad song you dance to */
+  "i–V–VI–iv": "😊",           /* lifting (in minor: bittersweet) */
+  "i–VI–VII–i": "🤩",          /* soaring, starry */
+  "i–VI (vamp)": "😑",         /* hypnotic */
+  "i–VII–VI–V": "😤",          /* the Andalusian walk down: dramatic */
+  "i–VI–iv–V": "😔",           /* brooding, pulled home by the V */
+  "i–V–VI–III–iv": "🥺",       /* yearning */
+  "i–IV–VI–V (Dorian)": "😎",  /* cool, a little bright */
+  "i–♭II (Phrygian)": "😈",    /* sinister */
+  "i–iv–♭II–V": "😰",          /* tense */
+  "i–III+–VI–V": "😨",         /* eerie */
+  "i–♭vi–i–♭II": "😱",         /* horror */
+  "i–vii°–♭vi–V": "🤪",        /* unhinged */
+  "i–♯iv°–iv–V": "👹",         /* evil */
 };
 const MINOR = [0, 2, 3, 5, 7, 8, 10];        /* A natural minor, semitones above A */
 let PROG = PROGS.Off;
@@ -579,5 +597,5 @@ const SCENES = [
   {name: "Intro", on: [1, 1, 0, 0]}, {name: "Build", on: [1, 1, 1, 0]}, {name: "Full", on: [1, 1, 1, 1]}, {name: "Break", on: [0, 1, 1, 1]}
 ];
 const SCENE_SONG = [0, 1, 2, 2, 3, 2];     /* Song: each scene 4 bars */
-const ITALO = {LANE, SCENES, SCENE_SONG, ID, SOUNDS, SONG, CLAPS, BEATS, THEMES, setClaps, setBeat, setTheme, setKey, setLen, to64, PROGS, setProg, setProgOff, setScale, SCALES, setBellKeys, progNames, progBars, allowedPcs, chordRoot, noteAt, tuneKick, findSound, applySound, setupSong, loadSection, writeSteps, partSteps};
+const ITALO = {LANE, SCENES, SCENE_SONG, ID, SOUNDS, SONG, CLAPS, BEATS, THEMES, setClaps, setBeat, setTheme, setKey, setLen, to64, PROGS, MOODS, setProg, setProgOff, setScale, SCALES, setBellKeys, progNames, progBars, allowedPcs, chordRoot, noteAt, tuneKick, findSound, applySound, setupSong, loadSection, writeSteps, partSteps};
 if (typeof module !== "undefined") module.exports = ITALO;
