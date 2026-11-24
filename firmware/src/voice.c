@@ -550,7 +550,7 @@ static void trk_note_on_work(track_t *t, uint32_t note, uint32_t vel)
 #include "partlp.c"                                /* Melones: a part's low pass */
 static void trk_note_on_engine(track_t *t,uint32_t note,uint32_t vel)
 {
-    clapfx_note(t,note);drumfx_note(t,note,vel);
+    clapfx_note(t,note);drumfx_note(t,note,vel);partlp_note(t);
 #if MELODEE_ADMISSION
     const track_t *previous=voice_admitting;uint8_t previous_parts=voice_admitting_p5parts;
     voice_admitting=0;uint32_t parts=voice_p5_parts();

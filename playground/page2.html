@@ -167,7 +167,7 @@ pre{background:#ece2c8;color:#231c14;box-shadow:inset 0 0 0 1px #b9aa88;border-r
   <div>
     <h2>Play it</h2>
     <p>Press Play, or the space bar. Click steps to add or remove notes; drums have a row per drum. Click a lane's name area to choose which track the keyboard and the sound knobs control. Computer keys: Z S X D C V… is the lower octave, Q 2 W 3 E R… the upper.</p>
-    <p>Each lane's Preset menu sets its sound and its one-bar pattern. They're all written over A minor, so any mix goes together, and Key moves all the melodic lanes. CLAP CHAOS gives claps, at random, a flam, a triplet retrigger or a 32nd ratchet (CHAOS STYLE picks, or ALL). LOWPASS and RESO on the drum lane filter the whole kit, down to a muffled thump. Shift-click a drum step to give it a roll: x2, x3, x4 fading in, x6 fading out, or none; the Trap beat is full of them. The drum lane's second menu picks the beat: Italo, Spacer (transcribed from your Spacer Woman loop, with its bap-bap-bap claps closing every second bar), or 1986 (transcribed from your 1986 loop). Each melodic lane's Held key menu turns one held key into a part: an octave bounce on the bass, a chord or a chord arpeggio (built in the song's key) on the others. Latch keeps it going when you let go; Steps off silences the lane's pattern so you can play it live. Solo any lanes you like: the soloed ones play together. DUCK MODE COMP is a sidechain compressor keyed by the kick's own audio: the harder the kick and the lower THRESH, the deeper the pump, shaped like the kick itself (TRIGGER is the simpler fixed dip). DUCK ON picks which kicks pump the mix: ALL of them, or only the BEATS (the kicks on 1, 2, 3, 4, not the syncopated ones), and DUCK EVERY thins that to every 2nd or 4th. WARP on the bass sweeps its filter open and shut over WARP RATE. DUCK on a lane is how hard the kick pushes it down; DUCK REL is how fast it comes back. The INFINITY CLAP sends each clap into a huge room: SWELL plays the start of that room backwards so it rises into the next clap, FEED sets how long the wash hangs (all the way to forever), WET how loud it all is, and EVERY picks which claps get it (every 4th: the last clap of each two bars).</p>
+    <p>Each lane's Preset menu sets its sound and its one-bar pattern. They're all written over A minor, so any mix goes together, and Key moves all the melodic lanes. CLAP CHAOS gives claps, at random, a flam, a triplet retrigger or a 32nd ratchet (CHAOS STYLE picks, or ALL). LOWPASS and RESO on the drum lane filter the whole kit, down to a muffled thump. Shift-click a drum step to give it a roll: x2, x3, x4 fading in, x6 fading out, or none; the Trap beat is full of them. The drum lane's second menu picks the beat: Italo, Spacer (transcribed from your Spacer Woman loop, with its bap-bap-bap claps closing every second bar), or 1986 (transcribed from your 1986 loop). Each melodic lane's Held key menu turns one held key into a part: an octave bounce or an octave climb on the bass; a chord, a chord arpeggio (built in the song's key), an octave or chord climb, or a Riser that doubles its speed every beat you hold it on the others. Latch keeps it going when you let go; Steps off silences the lane's pattern so you can play it live. Solo any lanes you like: the soloed ones play together. DUCK MODE COMP is a sidechain compressor keyed by the kick's own audio: the harder the kick and the lower THRESH, the deeper the pump, shaped like the kick itself (TRIGGER is the simpler fixed dip). DUCK ON picks which kicks pump the mix: ALL of them, or only the BEATS (the kicks on 1, 2, 3, 4, not the syncopated ones), and DUCK EVERY thins that to every 2nd or 4th. WARP on the bass sweeps its filter open and shut over WARP RATE. CUT RND on any lane gives every note or drum hit its own random cutoff: a little for movement, a lot for chaos. DUCK on a lane is how hard the kick pushes it down; DUCK REL is how fast it comes back. The INFINITY CLAP sends each clap into a huge room: SWELL plays the start of that room backwards so it rises into the next clap, FEED sets how long the wash hangs (all the way to forever), WET how loud it all is, and EVERY picks which claps get it (every 4th: the last clap of each two bars).</p>
   </div>
   <div>
     <h2>Keep a sound</h2>
@@ -210,6 +210,7 @@ const ENUMS2 = {CST: ["ALL", "FLAM", "TRIPLET", "RATCHET"], DMODE: ["TRIGGER", "
   ARATE: ["1/8", "1/16", "1/32", "16T", "8T"]};
 const warp = {depth: 30, rate: 2};        /* the bass's cutoff warp: LFO -> filter, synced (rate: index into WR) */
 const dlp = {cut: 127, res: 0};           /* the drum lane's low pass (127: open, bypassed) */
+const cutRnd = [0, 0, 0, 0];              /* CUT RND per lane: each note draws a cutoff up to this far down */
 const arpSync = {rate: 1, gate: 64};      /* the arp lane's step rate against the song (index into ARATE) and gate */
 const ARATE_DIV = [1, 2, 3, 5, 4];        /* N_DIV: 1/8, 1/16, 1/32, 16T, 8T */
 function applyWarp() {
@@ -339,10 +340,24 @@ let laneKnobs = [];
 const LIVE = {
   bass: {"Off": {}, "Octave 16ths": {AMODE: 1, ARATE: 2, AOCT: 2, AGATE: 70}, "Octave 8ths": {AMODE: 1, ARATE: 1, AOCT: 2, AGATE: 60},
     "Up 2 octaves": {AMODE: 1, ARATE: 2, AOCT: 3, AGATE: 60}},
-  chord: {"Off": {}, "Chord": {CHRD: 1, VOICE: 0}, "Chord up 16ths": {CHRD: 1, AMODE: 1, ARATE: 2, AOCT: 1, AGATE: 80},
-    "Chord up-down 8ths": {CHRD: 1, AMODE: 3, ARATE: 1, AOCT: 2, AGATE: 80}, "Chord random 16ths": {CHRD: 1, AMODE: 4, ARATE: 2, AOCT: 2, AGATE: 70},
-    "Octave 16ths": {AMODE: 1, ARATE: 2, AOCT: 2, AGATE: 70}}
+  chord: {"Off": {}, "Chord": {CHRD: 1, VOICE: 0}, "Chord up 16ths": {CHRD: 1, VOICE: 0, AMODE: 1, ARATE: 2, AOCT: 1, AGATE: 80},
+    "Chord up-down 8ths": {CHRD: 1, VOICE: 0, AMODE: 3, ARATE: 1, AOCT: 2, AGATE: 80}, "Chord random 16ths": {CHRD: 1, VOICE: 0, AMODE: 4, ARATE: 2, AOCT: 2, AGATE: 70},
+    "Octave 16ths": {AMODE: 1, ARATE: 2, AOCT: 2, AGATE: 70},
+    "Octave climb": {AMODE: 1, ARATE: 2, AOCT: 4, AGATE: 70}, "Chord climb": {CHRD: 1, VOICE: 0, AMODE: 1, ARATE: 2, AOCT: 4, AGATE: 70},
+    "Riser": {CHRD: 1, VOICE: 0, AMODE: 1, ARATE: 0, AOCT: 3, AGATE: 70, RISE: 1}}
 };
+/* RISER: while a key is held (or latched), the arp's rate doubles each beat: 1/4, 1/8, 1/16, 1/32 */
+const rise = [0, 0, 0, 0], riseStage = [-1, -1, -1, -1];
+function riseTick(n) {
+  const beat = 44100 * 60 / +$("bpm").value;
+  for (let t = 1; t < 4; t++) {
+    if (!(liveSet(t)[liveMode[t]] || {}).RISE) continue;
+    const held = (sel === t && manual.size > 0) || latch[t];
+    rise[t] = held ? rise[t] + n : 0;
+    const st = held ? Math.min(3, Math.floor(rise[t] / beat)) : 0;
+    if (st !== riseStage[t]) { riseStage[t] = st; w.w_tset(t, ID.P_ARATE, st); }
+  }
+}
 const liveMode = ["Off", "Off", "Off", "Off"], latch = [false, false, false, false], stepsOn = [true, true, true, true];
 function liveSet(t) { return t === 1 ? LIVE.bass : LIVE.chord; }
 function applyLive(t) {
@@ -378,14 +393,15 @@ function buildLanes() {
                    K.lr = knob("lr0", "RESO", 0, 127, () => dlp.res, v => { dlp.res = v; w.w_lp(0, dlp.cut, dlp.res); }); }
     if (t === 2) { K.ar = knob("ar2", "RATE", 0, 4, () => arpSync.rate, v => { arpSync.rate = v; applyArpSync(); }, {e: "ARATE"});
                    K.ag = knob("ag2", "GATE", 1, 127, () => arpSync.gate, v => { arpSync.gate = v; applyArpSync(); }); }
-    if (t) laneKnobs.push(K.dk); laneKnobs.push(K.lv); if (t === 1) laneKnobs.push(K.wp, K.wr); if (t === 0) laneKnobs.push(K.lp, K.lr); if (t === 2) laneKnobs.push(K.ar, K.ag);
+    K.cr = knob(`cr${t}`, "CUT RND", 0, 127, () => cutRnd[t], v => { cutRnd[t] = v; w.w_lpchaos(t, v); });
+    if (t && t !== 2) laneKnobs.push(K.dk); laneKnobs.push(K.lv, K.cr); if (t === 1) laneKnobs.push(K.wp, K.wr); if (t === 0) laneKnobs.push(K.lp, K.lr); if (t === 2) laneKnobs.push(K.ar, K.ag);
     return `<div class="lane${t === sel ? " sel" : ""}" data-t="${t}">
       <div class="lh"><div class="t"><span>${NAMES[t]}</span><span class="kv">${I.SCENES[cur].on[t] ? "" : "OUT"}</span></div>
         <select data-t="${t}" aria-label="${NAMES[t]} preset">${opts}</select>
         ${t ? `<select class="live" data-l="${t}" aria-label="${NAMES[t]} live mode">${Object.keys(liveSet(t)).map(m => `<option${m === liveMode[t] ? " selected" : ""}>${m === "Off" ? "Held key: plain" : "Held key: " + m.toLowerCase()}</option>`).join("")}</select>
         <div class="b"><button class="latch${latch[t] ? " on" : ""}" data-t="${t}" aria-pressed="${latch[t]}">Latch</button><button class="steps${stepsOn[t] ? " on" : ""}" data-t="${t}" aria-pressed="${stepsOn[t]}">Steps</button></div>` : ""}
         <div class="b"><button class="kb${t === sel ? " on" : ""}" data-t="${t}">Keys</button><button class="mute${mutes[t] ? " on" : ""}" data-t="${t}" aria-pressed="${!!mutes[t]}">Mute</button><button class="solo${solos[t] ? " on" : ""}" data-t="${t}" aria-pressed="${!!solos[t]}">Solo</button></div>
-        <div class="mini">${t ? knobHtml(K.dk) : ""}${knobHtml(K.lv)}</div>${t === 1 ? `<div class="mini">${knobHtml(K.wp)}${knobHtml(K.wr)}</div>` : ""}${t === 0 ? `<div class="mini">${knobHtml(K.lp)}${knobHtml(K.lr)}</div>` : ""}${t === 2 ? `<div class="mini">${knobHtml(K.ar)}${knobHtml(K.ag)}</div>` : ""}</div>
+        <div class="mini">${t && t !== 2 ? knobHtml(K.dk) : ""}${knobHtml(K.lv)}${knobHtml(K.cr)}</div>${t === 1 ? `<div class="mini">${knobHtml(K.wp)}${knobHtml(K.wr)}</div>` : ""}${t === 0 ? `<div class="mini">${knobHtml(K.lp)}${knobHtml(K.lr)}</div>` : ""}${t === 2 ? `<div class="mini">${knobHtml(K.ar)}${knobHtml(K.ag)}</div>` : ""}</div>
       <div class="gridwrap"${stepsOn[t] ? "" : ' style="opacity:.35"'}><div class="grid ${t ? "mel" : ""}" id="g${t}" style="grid-template-columns:34px repeat(${LENP()},minmax(11px,1fr));min-width:${LENP() === 16 ? 320 : 780}px">${gridHtml(t)}</div></div></div>`;
   }).join("");
   laneKnobs.forEach(bindKnob);
@@ -544,6 +560,7 @@ function start() {
     const L = ev.outputBuffer.getChannelData(0), R = ev.outputBuffer.getChannelData(1);
     for (let off = 0; off < L.length; off += 128) {
       if (playing) { const idx = w.w_seqidx(0), last = LENP() - 1; if (idx === last && lastIdx !== last) onBoundary(); lastIdx = idx; }
+      riseTick(128);
       const f = new Float32Array(w.memory.buffer, w.w_render(128), 256);
       for (let i = 0; i < 128; i++) { L[off + i] = f[2 * i]; R[off + i] = f[2 * i + 1]; scopeBuf[scopePos++ & 2047] = (f[2 * i] + f[2 * i + 1]) * 0.5; }
     }

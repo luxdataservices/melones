@@ -245,7 +245,7 @@ const SONG = {
   bpm: 124,
   tracks: ["Drums", "Bass", "Arp", "Lead"],
   defaults: ["SID DIGI KIT", "BODY HEAT", "TWINKLE", "CYBER LEAD"],
-  duck: [0, 18, 64, 88],        /* DUCK per track: the kick pumps the pad and lead hardest, the arp less, the bass barely */
+  duck: [0, 18, 0, 88],         /* DUCK per track: the kick pumps the pad and lead hard, the bass barely, never the arp */
   duckRel: 76,
   duckMode: [1, 1],             /* DUCK ON: 1 = kicks on the beat only; EVERY: 1, 2 or 4 */
   duckComp: [1, 64],            /* DUCK MODE 1 = sidechain compressor keyed by the kick's audio; THRESH 64 = -24 dB */
