@@ -88,6 +88,10 @@ input[type=text]{font:16px Rubik,system-ui,sans-serif;min-height:44px;border-rad
 .chip b{display:block;font-family:"Barlow Condensed",sans-serif;font-size:13px;letter-spacing:.06em;color:#cfc7bb}.chip span{font-size:16px}
 .chip.lit{background:#5a1a12;border-color:#ff3b2a;color:#ff6a55;box-shadow:0 0 6px #ff3b2a66}.chip.lit b{color:#ffd9cf}
 .key.off{opacity:.35}
+.grid.roll{gap:1px 2px}.grid.roll .cell{height:9px;border-radius:1px;box-shadow:none}.grid.roll .cell.bk{background:#2b2926}.grid.roll .cell.bk.beat{background:#353230}
+.grid.roll .rl.pr{font-size:8px;line-height:9px;opacity:.55}.grid.roll .rl.pr.c{opacity:1}
+.grid.roll .cell.on{border-radius:2px 0 0 2px}.grid.roll .cell.tie{border-radius:0}
+.grid.roll .cell.ph::after{box-shadow:inset 0 0 0 1px var(--cream)}
 </style>
 <style>
 /* CRUMAR: a crusty late-70s Italian panel. Worn beige backdrop; black matte panel between walnut end cheeks;
@@ -411,7 +415,7 @@ function buildLanes() {
         <div class="b"><button class="latch${latch[t] ? " on" : ""}" data-t="${t}" aria-pressed="${latch[t]}">Latch</button><button class="steps${stepsOn[t] ? " on" : ""}" data-t="${t}" aria-pressed="${stepsOn[t]}">Steps</button></div>` : ""}
         <div class="b"><button class="kb${t === sel ? " on" : ""}" data-t="${t}">Keys</button><button class="mute${mutes[t] ? " on" : ""}" data-t="${t}" aria-pressed="${!!mutes[t]}">Mute</button><button class="solo${solos[t] ? " on" : ""}" data-t="${t}" aria-pressed="${!!solos[t]}">Solo</button></div>
         <div class="mini">${t && t !== 2 ? knobHtml(K.dk) : ""}${knobHtml(K.lv)}${knobHtml(K.cr)}${knobHtml(K.sw)}</div>${t === 1 ? `<div class="mini">${knobHtml(K.wp)}${knobHtml(K.wr)}</div>` : ""}${t === 0 ? `<div class="mini">${knobHtml(K.lp)}${knobHtml(K.lr)}</div>` : ""}${t === 2 ? `<div class="mini">${knobHtml(K.ar)}${knobHtml(K.ag)}</div>` : ""}</div>
-      <div class="gridwrap"${stepsOn[t] ? "" : ' style="opacity:.35"'}><div class="grid ${t ? "mel" : ""}" id="g${t}" style="grid-template-columns:34px repeat(${LENP()},minmax(8px,1fr));min-width:${LENP() === 16 ? 320 : LENP() === 32 ? 460 : 600}px">${gridHtml(t)}</div></div></div>`;
+      <div class="gridwrap"${stepsOn[t] ? "" : ' style="opacity:.35"'}><div class="grid ${t ? "mel roll" : ""}" id="g${t}" style="grid-template-columns:34px repeat(${LENP()},minmax(8px,1fr));min-width:${LENP() === 16 ? 320 : LENP() === 32 ? 460 : 600}px">${gridHtml(t)}</div></div></div>`;
   }).join("");
   laneKnobs.forEach(bindKnob);
   for (const s of $("lanes").querySelectorAll("select[data-t]")) s.addEventListener("change", () => {
@@ -441,7 +445,7 @@ function buildLanes() {
       const nx = ROLLS[(k + 1) % ROLLS.length]; if (nx) v.roll = nx.concat([n]); else delete v.roll;   /* one rolling row a step */
       writeTrack(0); $("g0").innerHTML = gridHtml(0); lastPh = []; return;
     }
-    toggle(t, +c.dataset.i, c.dataset.r);
+    if (t && c.dataset.p) rollToggle(t, +c.dataset.i, +c.dataset.p); else toggle(t, +c.dataset.i, c.dataset.r);
   });
 }
 function gridHtml(t) {
@@ -451,10 +455,47 @@ function gridHtml(t) {
     const on = Array.isArray(v) && v.some(n => notes.includes(n)), rl = on && v.roll && (!v.roll[4] || notes.includes(v.roll[4])) ? v.roll[0] : 0;
     return `<div class="${cls(i)}${on ? " on" + (DROWS[r][0] === "CLAP" ? " cl" : "") : ""}${rl ? " roll" : ""}" data-i="${i}" data-r="${r}" tabindex="-1" aria-label="${nm} step ${i + 1}${rl ? ", roll of " + rl : ""}">${rl ? `<span class="rn">${rl}</span>` : ""}</div>`;
   }).join("")).join("");
-  return `<div class="rl">${st.some(v => Array.isArray(v) && v.length > 1) ? "CHRD" : "NOTE"}</div>` + st.map((v, i) => {
-    const tie = (v === "tie" || v === "tieS"), on = v != null && !tie, n = on ? (Array.isArray(v) ? v[0] : v) : 0;
-    return `<div class="${cls(i)}${on ? " on" : tie ? " tie" : ""}" data-i="${i}" tabindex="-1" aria-label="step ${i + 1}">${on ? `<span class="nn">${nn(I.noteAt(n, i) + keyShift).replace(/-?\d/, "")}</span>` : ""}</div>`;
-  }).join("");
+  /* the melodic lanes: a piano roll, a row a pitch (as it sounds: the key and the chord applied), a note a bar as long
+   * as it plays */
+  const spans = [];                              /* [pitch, start, length] */
+  let open = [];
+  st.forEach((v, i) => {
+    if (v === "tie" || v === "tieS") { for (const o of open) o[2]++; return; }
+    open = [];
+    if (v == null) return;
+    for (const n of [v].flat()) { const o = [I.noteAt(n, i) + keyShift, i, 1]; spans.push(o); open.push(o); }
+  });
+  let lo = Math.min(...spans.map(o => o[0])), hi = Math.max(...spans.map(o => o[0]));
+  if (!spans.length) { lo = t === 1 ? 33 : 64; hi = lo + 12; }
+  while (hi - lo < 12) { hi++; if (hi - lo < 12) lo--; }
+  hi += 1; lo -= 1;
+  const at = new Map(); for (const o of spans) for (let k = 0; k < o[2]; k++) at.set(o[0] + ":" + (o[1] + k), k ? "tie" : "on");
+  let h = "";
+  for (let pch = hi; pch >= lo; pch--) {
+    const bk = [1, 3, 6, 8, 10].includes(pch % 12);
+    h += `<div class="rl pr${pch % 12 === 0 ? " c" : ""}">${nn(pch)}</div>` + st.map((v, i) => {
+      const k = at.get(pch + ":" + i);
+      return `<div class="${cls(i)}${bk ? " bk" : ""}${k === "on" ? " on" : k === "tie" ? " tie" : ""}" data-i="${i}" data-p="${pch}" tabindex="-1" aria-label="${nn(pch)} step ${i + 1}${k ? ", note" : ""}"></div>`;
+    }).join("");
+  }
+  return h;
+}
+function rollToggle(t, i, pch) {   /* add, remove or shorten a note at pitch pch (as it sounds) on step i */
+  const st = pat[cur][t], sounds = n => I.noteAt(n, i) + keyShift === pch;
+  let start = i; while (start > 0 && /^tie/.test(st[start])) start--;
+  const v = st[start], notes = v == null || /^tie/.test(v) ? [] : [v].flat(), hit = notes.findIndex(n => I.noteAt(n, start) + keyShift === pch);
+  if (hit >= 0 && start < i) {                   /* inside a long note: it ends here */
+    for (let j = i; j < 64 && /^tie/.test(st[j]); j++) st[j] = null;
+  } else if (hit >= 0) {                         /* its start: that pitch goes */
+    const left = notes.filter((_, k) => k !== hit);
+    if (left.length) st[start] = left.length > 1 ? left : left[0];
+    else { st[start] = null; for (let j = start + 1; j < 64 && /^tie/.test(st[j]); j++) st[j] = null; }
+  } else {                                       /* a new note: the pattern note that sounds at pch here */
+    let n = pch - keyShift; for (let d = 0; d <= 14; d++) { if (sounds(pch - keyShift - d)) { n = pch - keyShift - d; break; } if (sounds(pch - keyShift + d)) { n = pch - keyShift + d; break; } }
+    if (v != null && !/^tie/.test(v) && start === i) st[i] = notes.concat([n]).slice(0, 4);
+    else { st[i] = n; }
+  }
+  writeTrack(t); $("g" + t).innerHTML = gridHtml(t); lastPh = [];
 }
 function toggle(t, i, r) {
   const st = pat[cur][t];
@@ -484,7 +525,7 @@ function playheads() {
     lastPh[t] = idx;
   }
   const bar = playing ? ((w.w_seqidx(1) >> 4) + progOff) & 3 : -1; if (bar !== progBar) { progBar = bar; status2(); }
-  const half = playing ? w.w_seqidx(1) >> 3 : -1; if (half !== lastHalf) { lastHalf = half; keyLock(); }
+  const half = playing ? w.w_seqidx(1) >> 3 : -1; if (half !== lastHalf) { lastHalf = half; keyLock(); if (manual.size && chordFollow(sel)) pushKeys(); }
 }
 
 /* ---- the selected track's sound ---- */
@@ -566,7 +607,21 @@ function keyOn(k) {               /* Key lock: a note outside the chord (or the 
   manual.add(k); pushKeys();
 }
 function keyOff(k) { manual.delete(k); pushKeys(); }
-function pushKeys() { let m = 0; for (const k of manual) m |= 1 << k; if (w) w.w_keys(m >>> 0); for (const el of document.querySelectorAll(".key")) el.classList.toggle("on", !!(m & (1 << +el.dataset.k))); }
+/* with a progression on, a held key on a chord mode plays the bar's chord (its accidentals too): the chord's three
+ * notes from the chord note nearest the key up, re-voiced at every chord change; the firmware's own CHRD (which
+ * builds on the plain minor scale) is off meanwhile */
+function chordFollow(t) { return $("prog").selectedIndex > 0 && t !== 0 && !!(liveSet(t)[liveMode[t]] || {}).CHRD; }
+function voiceKeys(keys) {
+  const step = curStep(), pcs = [57, 60, 64].map(n => ((I.noteAt(n, step) - 9) % 12 + 12) % 12), out = new Set();
+  for (const k of keys) {
+    let r = k; for (let d = 0; d < 12; d++) { if (pcs.includes((k - d + 8 + 120) % 12)) { r = k - d; break; } if (pcs.includes((k + d + 8) % 12)) { r = k + d; break; } }
+    for (let j = r; j < r + 12 && j < 27; j++) if (j >= 0 && pcs.includes((j + 8) % 12)) out.add(j);
+  }
+  return out;
+}
+let lastVoiced = "";
+function pushKeys() { const follow = chordFollow(sel); if (w && sel) w.w_tset(sel, ID.P_CHRD, follow ? 0 : ((liveSet(sel)[liveMode[sel]] || {}).CHRD || 0));
+  let m = 0; for (const k of follow ? voiceKeys(manual) : manual) m |= 1 << k; lastVoiced = follow ? String(m) : ""; if (w) w.w_keys(m >>> 0); for (const el of document.querySelectorAll(".key")) el.classList.toggle("on", !!(m & (1 << +el.dataset.k))); }
 
 /* ---- audio ---- */
 function start() {

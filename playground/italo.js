@@ -195,23 +195,29 @@ function bar1986() {
   for (let b = 1; b <= 16; b++) { const n = (P[b] || []).slice(); s.push(b === 5 || b === 13 ? acc(n) : n); }
   return s;
 }
-/* "Trap": half-time (snare + clap on beat 3), kick 1, the & of 2, the & of 3; 8th hats with rolls:
- * roll = [hits, over steps, first velocity, last velocity] (drumfx.c plays the hits between the steps) */
+/* "Trap": half-time (snare + clap on beat 3), 8th hats with rolls at real rates, four bars:
+ * roll = [hits, over steps, first velocity, last velocity, the one note that rolls] (drumfx.c plays the hits between
+ * the steps). Rates: 2 a step = 32nds, 3 a step = 32nd triplets, 6 over 4 steps = 16th triplets, 4 a step = 64ths. */
 function roll(a, r) { a.roll = r; return a; }
-function trapBar() {                    /* steady 8th hats; every roll ends before the next hat */
+function trapBar(v = 0) {               /* v: 0 the main bar, 1 the answer, 2 the fill (bar 4) */
+  const K3 = [[0, 7, 10], [0, 3, 10, 11], [0, 6, 10]][v];
+  const R = [   /* step: [hits, span, v0, v1] for the hat */
+    {6: [4, 2, 70, 112], 12: [6, 4, 84, 124]},                       /* 32nds into beat 3; 16th triplets across beat 4 */
+    {4: [2, 1, 96, 104], 10: [6, 2, 60, 118], 14: [4, 2, 110, 70]},  /* a 32nd pair; 32nd triplets; 32nds falling away */
+    {2: [6, 4, 70, 110], 12: [8, 2, 40, 124]}                        /* 16th triplets across beat 2; a 64th burst */
+  ][v];
+  let skip = -1;
   const s = [];
   for (let i = 0; i < 16; i++) {
     const n = [];
-    if (i === 0 || i === 6 || i === 10) n.push(K);
+    if (K3.includes(i)) n.push(K);
     if (i === 8) n.push(SN, CL);
-    if (i === 14) n.push(HO); else if (i % 2 === 0 || i === 3) n.push(HC);
-    let v = n;
-    if (i === 3) v = roll(n, [2, 1, 90, 112, HC]);          /* a 32nd double into beat 2 */
-    if (i === 5) v = roll([HC], [3, 1, 70, 104, HC]);       /* a 16th triplet */
-    if (i === 10) v = roll(n, [2, 1, 96, 112, HC]);         /* 32nds on the & of 3 */
-    if (i === 12) v = roll(n, [6, 2, 118, 40, HC]);         /* 32nd triplets fading out over two steps */
-    if (i === 15) v = roll([HC, SN], [4, 1, 40, 100, SN]);  /* a snare roll swelling into the bar */
-    s.push(i === 8 ? acc(v) : v);
+    const hat = i > skip && (i % 2 === 0 || R[i]);
+    if (v === 1 && i === 15) n.push(HO); else if (hat) n.push(HC);
+    let x = n;
+    if (R[i] && hat) { x = roll(n, R[i].concat([HC])); skip = i + R[i][1] - 1; }
+    if (v === 2 && i === 14) { x = roll(n.concat([SN]), [4, 2, 50, 124, SN]); }   /* the fill's snare roll into the top */
+    s.push(i === 8 ? acc(x) : x);
   }
   return s;
 }
@@ -458,14 +464,18 @@ const LANE = {
     {name: "Spacer", sound: "SID DIGI KIT", steps: () => [...spacerBar(0), ...spacerBar(1)], bpm: 124},
     {name: "1986", sound: "SIMMONS KIT", steps: () => bar1986(), bpm: 125},
     {name: "Miami", sound: "808 BOOM", steps: () => miamiBar(), bpm: 126},
-    {name: "Trap", sound: "808 KIT", steps: () => trapBar(), bpm: 140}
+    {name: "Trap", sound: "808 KIT", steps: () => [...trapBar(0), ...trapBar(1), ...trapBar(0), ...trapBar(2)], bpm: 140}
   ],
   bass: [
     {name: "Octaves", sound: "BODY HEAT", steps: () => Array.from({length: 16}, (_, i) => i % 2 ? 45 : 33)},
     {name: "Gallop", sound: "BODY HEAT", steps: () => Array.from({length: 16}, (_, i) => i % 4 === 1 ? null : i % 4 === 3 ? 45 : 33)},
     {name: "Electro", sound: "MONEY BASS", steps: () => [33, null, null, 33, null, null, 45, 33, 33, null, 40, 45, null, null, 45, null]},
     {name: "Hold", sound: "1986 BASS", steps: () => bar([[0, 33, 12], [12, 31, 4]])},
-    {name: "808", sound: "808 ROLL", steps: () => bar([[0, 33, 6, 1], [6, 36, 4], [10, 31, 4, 1], [14, 33, 2]])}
+    {name: "808", sound: "808 ROLL", steps: () => [   /* long 808s on Trap's kicks, sliding: rings until the next */
+      ...bar([[0, 33, 7], [7, 33, 3, 1], [10, 36, 6]]),
+      ...bar([[0, 33, 3], [3, 33, 7, 1], [10, 31, 1], [11, 31, 5, 1]]),
+      ...bar([[0, 33, 7], [7, 33, 3, 1], [10, 36, 6]]),
+      ...bar([[0, 33, 6, 1], [6, 45, 4, 1], [10, 40, 6, 1]])]}
   ],
   arp: [   /* stabs: quiet bars that answer at their ends, the fourth bar a fill (A minor; the progression moves them) */
     {name: "Stabs", sound: "CRYSTAL ARP", steps: () => arp4([[13, 76], [14, 81], [15, 84]], [[10, 76], [11, 81], [12, 84], [13, 88], [14, 84], [15, 93]])},
