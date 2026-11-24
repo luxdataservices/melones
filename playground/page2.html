@@ -53,7 +53,7 @@ select{background:var(--cap);color:#22150b;padding:0 10px}
 .lh .b{display:flex;gap:6px}
 .lh .b button{flex:1;min-height:40px;font-size:14px;background:var(--rind3);color:var(--cap)}
 .lh .b button.on{background:var(--glow);color:#22150b}
-.lh .b button.mute.on{background:#7a2a1d;color:#fff}.lh .b button.solo.on{background:#ffd54a;color:#22150b}.lane.dim .gridwrap{opacity:.4}
+.lh .b button.mute.on{background:#7a2a1d;color:#fff}.lh .b button.latch.on{background:var(--pink);color:#22150b}.lh select.live{min-height:36px;font-size:14px}.lh .b button.solo.on{background:#ffd54a;color:#22150b}.lane.dim .gridwrap{opacity:.4}
 .mini{display:flex;gap:10px;justify-content:space-around}
 .mini .knob{width:38px;height:38px}.mini .knob::after{height:10px;transform-origin:2px 15px}
 .gridwrap{overflow-x:auto;padding-bottom:4px}
@@ -115,7 +115,7 @@ input[type=text]{font:16px Rubik,system-ui,sans-serif;min-height:44px;border-rad
   <div>
     <h2>Play it</h2>
     <p>Press Play, or the space bar. Click steps to add or remove notes; drums have a row per drum. Click a lane's name area to choose which track the keyboard and the sound knobs control. Computer keys: Z S X D C V… is the lower octave, Q 2 W 3 E R… the upper.</p>
-    <p>Theme swaps the chords, bassline and lead melody together, so every part agrees, and Key moves all of it. The drum lane's second menu picks the beat: Italo, Spacer (transcribed from your Spacer Woman loop, with its bap-bap-bap claps closing every second bar), or 1986 (transcribed from your 1986 loop). Solo plays one lane alone (shift-click to solo several). DUCK on a lane is how hard the kick pushes it down; DUCK REL is how fast it comes back. The INFINITY CLAP sends each clap into a huge room: SWELL plays the start of that room backwards so it rises into the next clap, FEED sets how long the wash hangs (all the way to forever), WET how loud it all is, and EVERY picks which claps get it (every 4th: the last clap of each two bars).</p>
+    <p>Theme swaps the chords, bassline and lead melody together, so every part agrees, and Key moves all of it. The drum lane's second menu picks the beat: Italo, Spacer (transcribed from your Spacer Woman loop, with its bap-bap-bap claps closing every second bar), or 1986 (transcribed from your 1986 loop). Each melodic lane's Held key menu turns one held key into a part: an octave bounce on the bass, a chord or a chord arpeggio (built in the song's key) on the others. Latch keeps it going when you let go; Steps off silences the lane's pattern so you can play it live. Solo plays one lane alone (shift-click to solo several). DUCK on a lane is how hard the kick pushes it down; DUCK REL is how fast it comes back. The INFINITY CLAP sends each clap into a huge room: SWELL plays the start of that room backwards so it rises into the next clap, FEED sets how long the wash hangs (all the way to forever), WET how loud it all is, and EVERY picks which claps get it (every 4th: the last clap of each two bars).</p>
   </div>
   <div>
     <h2>Keep a sound</h2>
@@ -183,10 +183,11 @@ let loaded = [];
 function ensureSound(t, name, force) {
   if (!force && loaded[t] === name) return;
   I.applySound(w, t, I.findSound(name)); loaded[t] = name;
+  if (t && typeof keyShift !== "undefined") applyLive(t);
 }
 function writeTrack(t) {
   const sec = I.SONG.sections[cur], kind = KINDS[t], part = sec[kind];
-  const steps = pat[cur][t], gate = kind === "lead" && part === "strings" ? 120 : kind === "bass" ? 70 : 64;
+  const steps = stepsOn[t] ? pat[cur][t] : new Array(64).fill(null), gate = kind === "lead" && part === "strings" ? 120 : kind === "bass" ? 70 : 64;
   I.writeSteps(w, t, steps, gate);
 }
 function loadSection(s, force) {
@@ -264,6 +265,26 @@ const DROWS = [["KICK", [36]], ["CLAP", [39, 38]], ["HAT", [42]], ["OPEN", [46]]
 const PC = ["C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"];
 const nn = n => PC[n % 12] + (Math.floor(n / 12) - 1);
 let laneKnobs = [];
+/* LIVE: what a held key does on a melodic lane (the lane's arpeggiator and chord keys; the steps are untouched) */
+const LIVE = {
+  bass: {"Off": {}, "Octave 16ths": {AMODE: 1, ARATE: 2, AOCT: 2, AGATE: 70}, "Octave 8ths": {AMODE: 1, ARATE: 1, AOCT: 2, AGATE: 60},
+    "Up 2 octaves": {AMODE: 1, ARATE: 2, AOCT: 3, AGATE: 60}},
+  chord: {"Off": {}, "Chord": {CHRD: 1, VOICE: 0}, "Chord up 16ths": {CHRD: 1, AMODE: 1, ARATE: 2, AOCT: 1, AGATE: 80},
+    "Chord up-down 8ths": {CHRD: 1, AMODE: 3, ARATE: 1, AOCT: 2, AGATE: 80}, "Chord random 16ths": {CHRD: 1, AMODE: 4, ARATE: 2, AOCT: 2, AGATE: 70},
+    "Octave 16ths": {AMODE: 1, ARATE: 2, AOCT: 2, AGATE: 70}}
+};
+const liveMode = ["Off", "Off", "Off", "Off"], latch = [false, false, false, false], stepsOn = [true, true, true, true];
+function liveSet(t) { return t === 1 ? LIVE.bass : LIVE.chord; }
+function applyLive(t) {
+  const m = liveSet(t)[liveMode[t]] || {}, snd = I.findSound(loaded[t]);
+  w.w_tset(t, ID.P_AMODE, m.AMODE || 0); w.w_tset(t, ID.P_CHRD, m.CHRD || 0);
+  if (m.ARATE !== undefined) w.w_tset(t, ID.P_ARATE, m.ARATE);
+  if (m.AOCT !== undefined) w.w_tset(t, ID.P_AOCT, m.AOCT);
+  if (m.AGATE !== undefined) w.w_tset(t, ID.P_AGATE, m.AGATE);
+  w.w_tset(t, ID.P_VOICE, m.VOICE !== undefined ? m.VOICE : snd && snd.VOICE !== undefined ? snd.VOICE : w.w_tget(t, ID.P_VOICE));
+  w.w_tset(t, ID.P_AHOLD, latch[t] ? 1 : 0);
+  w.w_tset(t, ID.P_ROOT, (9 + keyShift + 12) % 12); w.w_tset(t, ID.P_SCALE, 2);    /* chord keys build in the song's key */
+}
 const mutes = [false, false, false, false], solos = [false, false, false, false];
 function applyMutes() {           /* a soloed lane plays, the rest wait; mute always wins */
   const any = solos.some(Boolean);
@@ -288,15 +309,27 @@ function buildLanes() {
       <div class="lh"><div class="t"><span>${NAMES[t]}</span><span class="kv">${t === 3 ? (part === "strings" ? "PAD" : part ? "LEAD" : "—") : part ? "" : "—"}</span></div>
         <select data-t="${t}" data-w="${which}" aria-label="${NAMES[t]} sound">${opts}</select>
         ${t ? "" : `<select id="beat" aria-label="Beat">${Object.keys(I.BEATS).map(b => `<option${b === beat ? " selected" : ""}>${b}</option>`).join("")}</select>`}
+        ${t ? `<select class="live" data-l="${t}" aria-label="${NAMES[t]} live mode">${Object.keys(liveSet(t)).map(m => `<option${m === liveMode[t] ? " selected" : ""}>${m === "Off" ? "Held key: plain" : "Held key: " + m.toLowerCase()}</option>`).join("")}</select>
+        <div class="b"><button class="latch${latch[t] ? " on" : ""}" data-t="${t}" aria-pressed="${latch[t]}">Latch</button><button class="steps${stepsOn[t] ? " on" : ""}" data-t="${t}" aria-pressed="${stepsOn[t]}">Steps</button></div>` : ""}
         <div class="b"><button class="kb${t === sel ? " on" : ""}" data-t="${t}">Keys</button><button class="mute${mutes[t] ? " on" : ""}" data-t="${t}" aria-pressed="${!!mutes[t]}">Mute</button><button class="solo${solos[t] ? " on" : ""}" data-t="${t}" aria-pressed="${!!solos[t]}">Solo</button></div>
         <div class="mini">${t ? knobHtml(laneKnobs[2 * t]) : ""}${knobHtml(laneKnobs[2 * t + 1])}</div></div>
-      <div class="gridwrap"><div class="grid ${t ? "mel" : ""}" id="g${t}">${gridHtml(t)}</div></div></div>`;
+      <div class="gridwrap"${stepsOn[t] ? "" : ' style="opacity:.35"'}><div class="grid ${t ? "mel" : ""}" id="g${t}">${gridHtml(t)}</div></div></div>`;
   }).join("");
   laneKnobs.forEach(bindKnob);
   for (const s of $("lanes").querySelectorAll("select[data-t]")) s.addEventListener("change", () => {
     const t = +s.dataset.t; chosen[s.dataset.w] = s.value; ensureSound(t, curSound(t)); selectTrack(t); buildLanes();
   });
   $("beat").addEventListener("change", () => setBeat($("beat").value));
+  for (const s of $("lanes").querySelectorAll("select.live")) s.addEventListener("change", () => {
+    const t = +s.dataset.l; liveMode[t] = Object.keys(liveSet(t))[s.selectedIndex]; applyLive(t); selectTrack(t);
+  });
+  for (const b of $("lanes").querySelectorAll("button.latch")) b.addEventListener("click", () => {
+    const t = +b.dataset.t; latch[t] = !latch[t]; applyLive(t); b.classList.toggle("on", latch[t]); b.setAttribute("aria-pressed", latch[t]);
+  });
+  for (const b of $("lanes").querySelectorAll("button.steps")) b.addEventListener("click", () => {
+    const t = +b.dataset.t; stepsOn[t] = !stepsOn[t]; writeTrack(t); b.classList.toggle("on", stepsOn[t]); b.setAttribute("aria-pressed", stepsOn[t]);
+    $("g" + t).parentElement.style.opacity = stepsOn[t] ? "" : ".35";
+  });
   for (const b of $("lanes").querySelectorAll("button.kb")) b.addEventListener("click", () => selectTrack(+b.dataset.t));
   for (const b of $("lanes").querySelectorAll("button.mute")) b.addEventListener("click", () => { const t = +b.dataset.t; mutes[t] = !mutes[t]; applyMutes(); });
   for (const b of $("lanes").querySelectorAll("button.solo")) b.addEventListener("click", e => {
@@ -314,7 +347,7 @@ function gridHtml(t) {
   }).join("")).join("");
   return `<div class="rl">${t === 3 && I.SONG.sections[cur].lead === "strings" ? "CHRD" : "NOTE"}</div>` + st.map((v, i) => {
     const tie = v === "tie", on = v != null && !tie, n = on ? (Array.isArray(v) ? v[0] : v) : 0;
-    return `<div class="${cls(i)}${on ? " on" : tie ? " tie" : ""}" data-i="${i}" tabindex="-1" aria-label="step ${i + 1}">${on ? `<span class="nn">${nn(n).replace(/\d/, "")}</span>` : ""}</div>`;
+    return `<div class="${cls(i)}${on ? " on" : tie ? " tie" : ""}" data-i="${i}" tabindex="-1" aria-label="step ${i + 1}">${on ? `<span class="nn">${nn(n + keyShift).replace(/-?\d/, "")}</span>` : ""}</div>`;
   }).join("");
 }
 function toggle(t, i, r) {
@@ -456,7 +489,7 @@ $("key").innerHTML = KEYS.map((k, i) => `<option value="${i}"${i === 9 ? " selec
 $("key").addEventListener("change", () => {            /* the song is in A minor: move the melodic tracks, never the drums */
   let d = (+$("key").value - 9 + 12) % 12; if (d > 6) d -= 12; keyShift = d;
   I.setKey(d);                                         /* the sequenced notes move ... */
-  for (let t = 1; t < 4; t++) { w.w_tset(t, ID.P_TRANS, d); writeTrack(t); }   /* ... and the keys play in the new key */
+  for (let t = 1; t < 4; t++) { w.w_tset(t, ID.P_TRANS, d); writeTrack(t); applyLive(t); $("g" + t).innerHTML = gridHtml(t); }   /* ... and the keys play in the new key */
   status2();
 });
 $("bpm").addEventListener("input", () => { const v = +$("bpm").value; w.w_gset(ID.G_BPM, v); $("bpmv").textContent = v; status2(); });
