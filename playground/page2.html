@@ -732,11 +732,11 @@ $("prog").innerHTML = Object.keys(I.PROGS).map((k, i) => `<option value="${i}">$
 $("prog").addEventListener("change", () => { I.setProg(Object.keys(I.PROGS)[+$("prog").value]); progOff = 0; I.setProgOff(0); writeTrack(0); for (let t = 1; t < 4; t++) { writeTrack(t); $("g" + t).innerHTML = gridHtml(t); } lastPh = []; kickToBar(Math.max(0, progBar)); status2(); });
 /* VIBES: one tap sets the key, scale, chords, tempo, swing and all four lanes (then change anything) */
 const VIBES = {
-  "Italo night drive": {key: 9, scale: "Minor", prog: "i–VI–III–VII", bpm: 124, swing: 0, lanes: ["Italo", "Gallop", "Stabs", "Strings"]},
-  "Miami booty": {key: 2, scale: "Phrygian", prog: "i–♭II (Phrygian)", bpm: 128, swing: 2, lanes: ["Miami", "808", "Pings", "Hook"]},
-  "Goth disco": {key: 4, scale: "Harmonic minor", prog: "i–VI–iv–V", bpm: 118, swing: 0, lanes: ["1986", "Hold", "Answer", "Bells"]},
-  "Sunny Italo": {key: 0, scale: "Major", prog: "i–VI–III–VII", bpm: 126, swing: 0, lanes: ["Spacer", "Octaves", "Drop", "Ghostcar"]},
-  "Dark trap": {key: 7, scale: "Minor", prog: "i–♭vi–i–♭II", bpm: 140, swing: 0, lanes: ["Trap", "808", "Riser", "Brass"]},
+  "Nightdrive": {key: 9, scale: "Minor", prog: "i–VI–III–VII", bpm: 124, swing: 0, lanes: ["Italo", "Gallop", "Stabs", "Strings"]},
+  "Booty": {key: 2, scale: "Phrygian", prog: "i–♭II (Phrygian)", bpm: 128, swing: 2, lanes: ["Miami", "808", "Pings", "Hook"]},
+  "Goth": {key: 4, scale: "Harmonic minor", prog: "i–VI–iv–V", bpm: 118, swing: 0, lanes: ["1986", "Hold", "Answer", "Bells"]},
+  "Sunny": {key: 0, scale: "Major", prog: "i–VI–III–VII", bpm: 126, swing: 0, lanes: ["Spacer", "Octaves", "Drop", "Ghostcar"]},
+  "Trap": {key: 7, scale: "Minor", prog: "i–♭vi–i–♭II", bpm: 140, swing: 0, lanes: ["Trap", "808", "Riser", "Brass"]},
 };
 $("vibe").innerHTML = `<option value="">Pick a vibe…</option>` + Object.keys(VIBES).map(k => `<option>${k}</option>`).join("");
 $("vibe").addEventListener("change", () => { const v = VIBES[$("vibe").value]; if (v) applyVibe(v); });
