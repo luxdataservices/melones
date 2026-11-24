@@ -269,7 +269,7 @@ function setPreset(t, k) {
   ensureSound(t, p.sound, true); writeTrack(t);
   buildLanes(); if (t === sel) buildSound();
 }
-const ENUMS2 = {CST: ["ALL", "FLAM", "TRIPLET", "RATCHET", "BEATREP"], SWG: ["STRAIGHT", "52%", "54%", "56%", "MPC 58%", "60%", "62%", "64%", "TRIPLET", "DRUNK 70%"], LSW: ["FOLLOW", "STRAIGHT", "+ LIGHT", "+ MORE", "+ HEAVY"], LSY: ["FREE", "4 BAR", "2 BAR", "1/1", "1/2", "1/4", "1/8", "1/8T", "1/16", "1/16T", "1/32"], LTG: ["PER NOTE", "ON BEAT"], DMODE: ["TRIGGER", "COMP"], DKEY: ["DRUMS", "GHOST"], DON: ["ALL", "BEATS"], DEV: ["ALL", "2ND", "4TH"], WR: ["4 BARS", "2 BARS", "1 BAR", "1/2", "1/4"],
+const ENUMS2 = {CST: ["ALL", "FLAM", "TRIPLET", "RATCHET", "BEATREP"], SWG: ["STRAIGHT", "52%", "54%", "56%", "MPC 58%", "60%", "62%", "64%", "TRIPLET", "DRUNK 70%"], LSW: ["FOLLOW", "STRAIGHT", "+ LIGHT", "+ MORE", "+ HEAVY"], LSY: ["FREE", "4 BAR", "2 BAR", "1/1", "1/2", "1/4", "1/8", "1/8T", "1/16", "1/16T", "1/32"], LTG: ["PER NOTE", "ON BEAT"], CHG: ["EVERY BAR", "75%", "50%", "25%"], DMODE: ["TRIGGER", "COMP"], DKEY: ["DRUMS", "GHOST"], DON: ["ALL", "BEATS"], DEV: ["ALL", "2ND", "4TH"], WR: ["4 BARS", "2 BARS", "1 BAR", "1/2", "1/4"],
   ARATE: ["1/8", "1/16", "1/32", "16T", "8T"]};
 const warp = {depth: 30, rate: 2};        /* the bass's cutoff warp: LFO -> filter, synced (rate: index into WR) */
 const dlp = {cut: 127, res: 0, hi: 127};   /* HIGHS: the drum lane's high shelf, 127 flat */
@@ -345,10 +345,14 @@ let evolveOn = false, barsPlayed = 0, evoMsgUntil = 0;
 $("evolve").addEventListener("click", () => { evolveOn = !evolveOn; $("evolve").setAttribute("aria-pressed", evolveOn); $("evolve").classList.toggle("on", evolveOn); barsPlayed = 0; });
 function evolve() {
   const pick = a => a[Math.floor(Math.random() * a.length)], vb = VIBES[$("vibe").value], r = vb && vb.roll, said = [];
-  const kinds = ["pattern", "pattern", "pattern", "pattern", "sound", "sound", "sound", "prog", "prog", "swing", "key"];
+  const kinds = ["melody", "melody", "melody", "melody", "pattern", "pattern", "pattern", "sound", "sound", "prog", "prog", "swing", "key"];
   const todo = new Set([pick(kinds)]); if (Math.random() < 0.4) todo.add(pick(kinds));
   for (const what of todo) {
-    if (what === "pattern") {
+    if (what === "melody") {               /* the lead: nudged most times, now and then a new one */
+      const fresh = Math.random() < 0.25, seed = Math.floor(Math.random() * 4294967296);
+      laneSteps[3] = (fresh ? I.genMelody(seed) : I.mutateMelody(laneSteps[3], seed)).map(cp); writeTrack(3);
+      said.push(fresh ? "new melody" : "melody");
+    } else if (what === "pattern") {
       const t = Math.floor(Math.random() * 4), pool = (r ? r.lanes[t] : I.LANE[KINDS[t]].map(p => p.name)).filter(n => n !== P(t).name);
       if (!pool.length) continue;
       const name = pick(pool), k = I.LANE[KINDS[t]].findIndex(p => p.name === name); if (k < 0) continue; preset[t] = k;
@@ -374,10 +378,20 @@ function evolve() {
   lastPh = []; status2();
   if (said.length) { $("sec").textContent = "→ " + said.join(" · ").toUpperCase(); evoMsgUntil = Date.now() + 4000; }
 }
+/* CHANGE: at each bar line, the chance the chords move on (EVERY BAR: always, the bars in order); the bar that comes
+ * plays chordPos, so a chord can sit for bars and then move: 1 1 1 1 5 4 */
+let chg = 0, chordPos = 0;
+const CHG_P = [1, 0.75, 0.5, 0.25];
 function onBoundary(idx) {       /* a bar's last step: the kick and bell to the next bar's chord; a short loop moves on */
   barsPlayed++;
   if (evolveOn && barsPlayed % 4 === 0) setTimeout(evolve, 0);   /* out of the audio callback, well before the next bar */
   if ($("prog").selectedIndex === 0) return;
+  if (chg) {
+    if (Math.random() < CHG_P[chg]) chordPos = (chordPos + 1) % 4;
+    I.setChordMap([chordPos, chordPos, chordPos, chordPos]); for (let t = 0; t < 4; t++) writeTrack(t);
+    kickToBar(chordPos); setTimeout(() => { progBar = -1; for (let t = 1; t < 4; t++) if (t === sel) drawLane(t); }, 0);
+    return;
+  }
   if (idx === len - 1 && len < 64) setProgOffset(progOff + len / 16);
   kickToBar((((idx + 1) % len >> 4) + progOff) & 3);
 }
@@ -432,7 +446,8 @@ function buildFx() {
               k("f_every", "EVERY", 0, 3, () => fxState.every, v => { fxState.every = v; pushClap(); }, {pink: 1, e: "EVERY"})]],
     ["GROOVE", [k("f_swg", "SWING", 0, 9, () => swing.g, v => { swing.g = v; applySwing(); }, {e: "SWG"}),
               k("f_chaos", "CHAOS", 0, 127, () => fxState.chaos, v => { fxState.chaos = v; pushChaos(); }, {pink: 1}),
-              k("f_cst", "STYLE", 0, 4, () => fxState.cstyle, v => { fxState.cstyle = v; pushChaos(); }, {pink: 1, e: "CST"}), null]]
+              k("f_cst", "STYLE", 0, 4, () => fxState.cstyle, v => { fxState.cstyle = v; pushChaos(); }, {pink: 1, e: "CST"}),
+              k("f_chg", "CHANGE", 0, 3, () => chg, v => { chg = v; chordPos = 0; I.setChordMap(chg ? [0, 0, 0, 0] : null); for (let t = 0; t < 4; t++) writeTrack(t); status2(); }, {e: "CHG"})]]
   ];
   FXK = MP.flatMap(([, ks]) => ks.filter(Boolean));
   $("fx").innerHTML = `<div class="grp">Master<span>sidechain compressor · infinity clap · groove</span></div><div class="kpages">${MP.map(([n, ks]) => pageHtml(n, ks)).join("")}</div>`;
@@ -675,7 +690,7 @@ function playheads() {
       if (c) { const x = c.offsetLeft - 48; if (x < gw.scrollLeft || x + 16 * 28 > gw.scrollLeft + gw.clientWidth) gw.scrollTo({left: Math.max(0, x), behavior: "smooth"}); } }
   }
   if (playing && follow && paged()) { const pb = w.w_seqidx(sel) >> 4; if (pb !== pageBar) showPage(pb); }
-  const bar = playing ? ((w.w_seqidx(1) >> 4) + progOff) & 3 : -1; if (bar !== progBar) { progBar = bar; status2(); }
+  const bar = playing ? (chg ? chordPos : ((w.w_seqidx(1) >> 4) + progOff) & 3) : -1; if (bar !== progBar) { progBar = bar; status2(); }
   const half = playing ? w.w_seqidx(1) >> 3 : -1; if (half !== lastHalf) { lastHalf = half; keyLock(); if (manual.size && chordFollow(sel)) pushKeys(); }
 }
 
@@ -802,7 +817,7 @@ function start() {
 function togglePlay() {
   start(); if (ctx && ctx.state !== "running") ctx.resume();
   playing = !playing;
-  if (playing) { lastIdx = -1; barsPlayed = 0; if (progOff) setProgOffset(0); if ($("prog").selectedIndex > 0) kickToBar(0); w.w_transport(3); }
+  if (playing) { lastIdx = -1; barsPlayed = 0; chordPos = 0; if (chg) { I.setChordMap([0, 0, 0, 0]); for (let t = 0; t < 4; t++) writeTrack(t); } if (progOff) setProgOffset(0); if ($("prog").selectedIndex > 0) kickToBar(0); w.w_transport(3); }
   else w.w_transport(2);
   $("play").textContent = playing ? "Stop" : "Play"; $("play").classList.toggle("on", playing);
 }
@@ -896,12 +911,12 @@ $("vibe").addEventListener("change", () => { const v = VIBES[$("vibe").value]; i
 $("dice").addEventListener("click", () => {     /* inside the picked vibe (its scales, chords, tempo, patterns, sounds), else anything */
   const pick = a => a[Math.floor(Math.random() * a.length)], vb = VIBES[$("vibe").value], r = vb && vb.roll;
   const all = {scale: Object.keys(I.SCALES)};
-  const lanes = KINDS.map((k, t) => r ? pick(r.lanes[t]) : pick(I.LANE[k]).name);
+  const lanes = KINDS.map((k, t) => t === 3 && Math.random() < 0.5 ? "Gen" : r ? pick(r.lanes[t]) : pick(I.LANE[k]).name);
   const scale = pick(r ? r.scale : all.scale), prog = pick(I.progsFor(scale));
   const v = {key: Math.floor(Math.random() * 12), scale, prog,
     bpm: r ? r.bpm[0] + 2 * Math.floor(Math.random() * ((r.bpm[1] - r.bpm[0]) / 2 + 1)) : 112 + 2 * Math.floor(Math.random() * 15),
     swing: pick(r ? r.swing : [0, 0, 0, 1, 2, 4]), lanes,
-    sounds: KINDS.map((k, t) => r ? (r.sounds[t] ? pick(r.sounds[t]) : I.LANE[k].find(p => p.name === lanes[t]).sound) : pick(I.SOUNDS[k]).name)};
+    sounds: KINDS.map((k, t) => r ? (r.sounds[t] ? pick(r.sounds[t]) : I.LANE[k].find(p => p.name === lanes[t]).sound) : pick(I.SOUNDS[k]).name)};   /* Gen keeps the vibe's lead sounds */
   applyVibe(v);
 });
 function applyVibe(v) {

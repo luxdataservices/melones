@@ -346,7 +346,9 @@ function setProg(name) { PROG = PROGS[name] || PROGS.Off; PROG_ID = PROGS[name] 
 function chordsOf(id, key) { return (PROGS[id] || []).map(c => chordName(c, key)); }
 let PROG_OFF = 0;                            /* a loop shorter than 4 bars: the bar of the progression it starts on */
 function setProgOff(n) { PROG_OFF = n & 3; }
-function chordAt(i) { const c = PROG[((i >> 4) + PROG_OFF) & 3]; return Array.isArray(c) ? c[(i & 15) < 8 ? 0 : 1] : c; }
+let CHORD_MAP = null;                        /* CHANGE: the chord each bar plays (indices into PROG), else bar = chord */
+function setChordMap(m) { CHORD_MAP = m; }
+function chordAt(i) { const c = PROG[CHORD_MAP ? CHORD_MAP[(i >> 4) & 3] : ((i >> 4) + PROG_OFF) & 3]; return Array.isArray(c) ? c[(i & 15) < 8 ? 0 : 1] : c; }
 /* SCALE: the patterns are written in A natural minor; another scale moves each scale step onto its own (Major:
  * C -> C#, F -> F#, G -> G#), notes off the scale left as they are. All seven-note, so a pattern keeps its shape. */
 const SCALES = {
@@ -533,6 +535,48 @@ function styleVariant(base, code) {
   }
   return out;
 }
+/* MELODIES: a lead written fresh. A one-bar motif (an Italo rhythm; chord tones on the beats, steps between), then
+ * the motif again with its tail changed, the motif, and an answer that comes home; written over A minor like every
+ * pattern, so the scale and the chords move it. mutateMelody nudges a few notes (Evolve). */
+const LADDER = [57, 59, 60, 62, 64, 65, 67, 69, 71, 72, 74, 76, 77, 79, 81, 83, 84, 86];   /* A minor, A3..D6 */
+const CHORD_IDX = i => [0, 2, 4].includes(i % 7);                 /* A, C, E: the home chord's notes */
+const RHYTHMS = [
+  [[0, 2], [2, 2], [4, 2], [6, 2], [8, 2], [10, 2], [12, 2], [14, 2]],          /* straight 8ths */
+  [[0, 3], [3, 3], [6, 2], [8, 3], [11, 3], [14, 2]],                          /* dotted, the Italo push */
+  [[0, 2], [3, 1], [4, 2], [6, 2], [10, 2], [12, 4]],                          /* a hook and a held note */
+  [[0, 1], [2, 1], [3, 2], [6, 2], [8, 1], [10, 1], [11, 3], [14, 2]],          /* syncopated */
+  [[0, 4], [4, 2], [6, 2], [8, 6], [14, 2]],                                   /* long, singing */
+  [[2, 2], [4, 1], [5, 1], [6, 2], [10, 2], [12, 1], [13, 1], [14, 2]]           /* off the one, a pickup */
+];
+function genMelody(seed) {
+  let x = (seed >>> 0) || 1; const rnd = () => ((x = (x * 1103515245 + 12345) >>> 0) / 4294967296);
+  const R = RHYTHMS[Math.floor(rnd() * RHYTHMS.length)], hi = rnd() < 0.5;
+  const line = (start, n) => { const out = []; let i = start;
+    for (let k = 0; k < n; k++) {
+      const strong = R[k][0] % 4 === 0;
+      if (k) { const r = rnd(); i += r < 0.35 ? 1 : r < 0.7 ? -1 : r < 0.8 ? 2 : r < 0.9 ? -2 : r < 0.95 ? 3 : -3; }
+      if (strong && !CHORD_IDX(i)) i += CHORD_IDX(i + 1) ? 1 : -1;   /* the beats sit on the chord */
+      i = Math.max(hi ? 9 : 5, Math.min(hi ? 16 : 13, i)); out.push(i); }
+    return out; };
+  const start = hi ? 11 : 7, motif = line(start, R.length), n = R.length, tail = [];
+  for (let k = n - 2, i = motif[n - 3]; k < n; k++) { i += [1, -1, 2, -2][Math.floor(rnd() * 4)]; if (R[k][0] % 4 === 0 && !CHORD_IDX(i)) i += CHORD_IDX(i + 1) ? 1 : -1; i = Math.max(5, Math.min(16, i)); tail.push(i); }   /* the tail steps on from the motif */
+  const answer = line(motif[0] + (rnd() < 0.5 ? 2 : -2), R.length), pv = answer[R.length - 2];
+  answer[R.length - 1] = Math.abs(pv - 7) <= Math.abs(pv - 14) ? 7 : 14;   /* home: the nearer A */
+  const bars = [motif, motif.slice(0, -2).concat(tail), motif, answer], s = new Array(64).fill(null);
+  bars.forEach((b, bar) => R.forEach(([st, len], k) => { s[bar * 16 + st] = LADDER[b[k]]; for (let j = 1; j < len; j++) s[bar * 16 + st + j] = "tie"; }));
+  return s;
+}
+function mutateMelody(steps, seed) {        /* one to three notes up or down the scale, or a long note split */
+  let x = (seed >>> 0) || 7; const rnd = () => ((x = (x * 1103515245 + 12345) >>> 0) / 4294967296);
+  const s = steps.slice(), starts = s.map((v, i) => typeof v === "number" ? i : -1).filter(i => i >= 0);
+  if (!starts.length) return genMelody(seed);
+  for (let m = 0, n = 1 + Math.floor(rnd() * 3); m < n; m++) {
+    const i = starts[Math.floor(rnd() * starts.length)], li = LADDER.indexOf(s[i]);
+    if (rnd() < 0.25) { let e = i + 1; while (e < 64 && s[e] === "tie") e++; if (e - i >= 2) { const h = i + Math.floor((e - i) / 2); s[h] = LADDER[Math.max(5, Math.min(16, (li < 0 ? 9 : li) + (rnd() < 0.5 ? 1 : -1)))]; } continue; }
+    if (li >= 0) s[i] = LADDER[Math.max(5, Math.min(16, li + [1, -1, 2, -2][Math.floor(rnd() * 4)]))];
+  }
+  return s;
+}
 const LANE = {
   drums: [
     {name: "Italo", sound: "SID DIGI KIT", steps: () => italoBar()},
@@ -560,6 +604,7 @@ const LANE = {
     {name: "Riser", sound: "LASER ARP", steps: () => arp4([[15, 81]], [[8, 69], [9, 72], [10, 76], [11, 81], [12, 84], [13, 88], [14, 93], [15, 96]])}
   ],
   lead: [
+    {name: "Gen", sound: "GHOSTCAR", steps: () => genMelody(Math.floor(Math.random() * 4294967296))},
     {name: "Strings", sound: "VELVET STRINGS", gate: 120, steps: () => bar([[0, A, 16]])},
     {name: "Hook", sound: "CYBER LEAD", steps: () => bar([[0, 76, 3], [3, 76, 3], [6, 74, 1], [7, 72, 2], [9, 69, 3], [12, 72, 2], [14, 74, 2]])},
     {name: "Ghostcar", sound: "GHOSTCAR", steps: () => bar([[0, 69, 2], [2, 67, 2], [4, 65, 2], [6, 64, 2], [8, 69, 2], [10, 64, 2], [12, 65, 2], [14, 74, 1], [15, 71, 1]])},
@@ -576,5 +621,5 @@ const SCENES = [
   {name: "Intro", on: [1, 1, 0, 0]}, {name: "Build", on: [1, 1, 1, 0]}, {name: "Full", on: [1, 1, 1, 1]}, {name: "Break", on: [0, 1, 1, 1]}
 ];
 const SCENE_SONG = [0, 1, 2, 2, 3, 2];     /* Song: each scene 4 bars */
-const ITALO = {LANE, SCENES, SCENE_SONG, ID, SOUNDS, SONG, CLAPS, BEATS, THEMES, setClaps, setBeat, setTheme, setKey, setLen, to64, PROGS, MOODS, SCALE_PROGS, progsFor, chordsOf, setProg, setProgOff, setScale, SCALES, setBellKeys, progNames, progBars, allowedPcs, chordRoot, noteAt, tuneKick, findSound, applySound, setupSong, loadSection, writeSteps, partSteps};
+const ITALO = {LANE, SCENES, SCENE_SONG, ID, SOUNDS, SONG, CLAPS, BEATS, THEMES, setClaps, setBeat, setTheme, setKey, setLen, to64, PROGS, MOODS, SCALE_PROGS, setChordMap, genMelody, mutateMelody, progsFor, chordsOf, setProg, setProgOff, setScale, SCALES, setBellKeys, progNames, progBars, allowedPcs, chordRoot, noteAt, tuneKick, findSound, applySound, setupSong, loadSection, writeSteps, partSteps};
 if (typeof module !== "undefined") module.exports = ITALO;
