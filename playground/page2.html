@@ -114,7 +114,7 @@ input[type=text]{font:16px Rubik,system-ui,sans-serif;min-height:44px;border-rad
   <div>
     <h2>Play it</h2>
     <p>Press Play, or the space bar. Click steps to add or remove notes; drums have a row per drum. Click a lane's name area to choose which track the keyboard and the sound knobs control. Computer keys: Z S X D C V… is the lower octave, Q 2 W 3 E R… the upper.</p>
-    <p>Solo plays one lane alone (shift-click to solo several). DUCK on a lane is how hard the kick pushes it down; DUCK REL is how fast it comes back. The INFINITY CLAP sends each clap into a huge room: SWELL plays the start of that room backwards so it rises into the next clap, FEED sets how long the wash hangs (all the way to forever), WET how loud it all is, and EVERY picks which claps get it (every 4th: the last clap of each two bars).</p>
+    <p>The drum lane's second menu picks the beat: Italo, or Spacer (transcribed from your Spacer Woman loop, with its 16th clap run closing every second bar). Solo plays one lane alone (shift-click to solo several). DUCK on a lane is how hard the kick pushes it down; DUCK REL is how fast it comes back. The INFINITY CLAP sends each clap into a huge room: SWELL plays the start of that room backwards so it rises into the next clap, FEED sets how long the wash hangs (all the way to forever), WET how loud it all is, and EVERY picks which claps get it (every 4th: the last clap of each two bars).</p>
   </div>
   <div>
     <h2>Keep a sound</h2>
@@ -139,7 +139,16 @@ const ENUMS = {MODEL: ["6581", "8580", "C64 6581", "C64 8580"], WAVE: ["TRI", "S
   VOICE: ["POLY", "MONO", "LEG", "UNI"], EVERY: ["ALL", "2ND", "4TH", "8TH"]};
 let w, ctx, node, ready = false, playing = false, sel = 3, oct = 0, cur = 0, queued = null, songMode = true, arrPos = 0, lastIdx = -1;
 const chosen = {drums: I.SONG.defaults[0], bass: I.SONG.defaults[1], arp: I.SONG.defaults[2], lead: I.SONG.defaults[3], pad: "VELVET STRINGS"};
-const pat = I.SONG.sections.map(sec => KINDS.map(k => I.partSteps(k, sec[k]).map(v => Array.isArray(v) ? v.slice() : v)));
+const orig = I.SONG.sections.map(sec => KINDS.map(k => I.partSteps(k, sec[k])));
+const cp = v => Array.isArray(v) ? Object.assign(v.slice(), v.acc ? {acc: 1} : {}) : v;
+const pat = I.SONG.sections.map(sec => KINDS.map(k => I.partSteps(k, sec[k]).map(cp)));
+let beat = "Italo";
+function setBeat(name) {                 /* new drum steps for every section; the user's other lanes stay */
+  beat = name; I.setBeat(name);
+  I.SONG.sections.forEach((sec, i) => { pat[i][0] = I.partSteps("drums", sec.drums).map(cp); orig[i][0] = pat[i][0].map(cp); });
+  if (name === "Spacer") { $("bpm").value = 124; $("bpm").dispatchEvent(new Event("input")); }
+  writeTrack(0); buildLanes();
+}
 const scopeBuf = new Float32Array(2048); let scopePos = 0;
 const fxState = {duckRel: I.SONG.duckRel, wet: I.SONG.clap[0], feed: I.SONG.clap[1], swell: I.SONG.clap[2], every: [1, 2, 4, 8].indexOf(I.SONG.clap[3]), duck: I.SONG.duck.slice()};
 
@@ -264,14 +273,16 @@ function buildLanes() {
     return `<div class="lane${t === sel ? " sel" : ""}" data-t="${t}">
       <div class="lh"><div class="t"><span>${NAMES[t]}</span><span class="kv">${t === 3 ? (part === "strings" ? "PAD" : part ? "LEAD" : "—") : part ? "" : "—"}</span></div>
         <select data-t="${t}" data-w="${which}" aria-label="${NAMES[t]} sound">${opts}</select>
+        ${t ? "" : `<select id="beat" aria-label="Beat">${Object.keys(I.BEATS).map(b => `<option${b === beat ? " selected" : ""}>${b}</option>`).join("")}</select>`}
         <div class="b"><button class="kb${t === sel ? " on" : ""}" data-t="${t}">Keys</button><button class="mute${mutes[t] ? " on" : ""}" data-t="${t}" aria-pressed="${!!mutes[t]}">Mute</button><button class="solo${solos[t] ? " on" : ""}" data-t="${t}" aria-pressed="${!!solos[t]}">Solo</button></div>
         <div class="mini">${t ? knobHtml(laneKnobs[2 * t]) : ""}${knobHtml(laneKnobs[2 * t + 1])}</div></div>
       <div class="gridwrap"><div class="grid ${t ? "mel" : ""}" id="g${t}">${gridHtml(t)}</div></div></div>`;
   }).join("");
   laneKnobs.forEach(bindKnob);
-  for (const s of $("lanes").querySelectorAll("select")) s.addEventListener("change", () => {
+  for (const s of $("lanes").querySelectorAll("select[data-t]")) s.addEventListener("change", () => {
     const t = +s.dataset.t; chosen[s.dataset.w] = s.value; ensureSound(t, curSound(t)); selectTrack(t); buildLanes();
   });
+  $("beat").addEventListener("change", () => setBeat($("beat").value));
   for (const b of $("lanes").querySelectorAll("button.kb")) b.addEventListener("click", () => selectTrack(+b.dataset.t));
   for (const b of $("lanes").querySelectorAll("button.mute")) b.addEventListener("click", () => { const t = +b.dataset.t; mutes[t] = !mutes[t]; applyMutes(); });
   for (const b of $("lanes").querySelectorAll("button.solo")) b.addEventListener("click", e => {
@@ -292,14 +303,13 @@ function gridHtml(t) {
     return `<div class="${cls(i)}${on ? " on" : tie ? " tie" : ""}" data-i="${i}" tabindex="-1" aria-label="step ${i + 1}">${on ? `<span class="nn">${nn(n).replace(/\d/, "")}</span>` : ""}</div>`;
   }).join("");
 }
-const orig = I.SONG.sections.map(sec => KINDS.map(k => I.partSteps(k, sec[k])));
 function toggle(t, i, r) {
   const st = pat[cur][t];
   if (t === 0) {
     const notes = DROWS[+r][1], v = Array.isArray(st[i]) ? st[i].slice() : [];
     const has = v.some(n => notes.includes(n));
     let nv = has ? v.filter(n => !notes.includes(n)) : v.concat(+r === 4 ? [47] : notes);
-    st[i] = nv.length ? nv.slice(0, 4) : null;
+    st[i] = nv.length ? Object.assign(nv.slice(0, 4), st[i] && st[i].acc ? {acc: 1} : {}) : null;
   } else if (st[i] != null && st[i] !== "tie") {
     st[i] = null; for (let j = i + 1; j < 64 && st[j] === "tie"; j++) st[j] = null;
   } else {

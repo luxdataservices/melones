@@ -5,7 +5,7 @@ const args = Object.fromEntries(process.argv.slice(2).map(a => a.split('=')));
 const solo = args.solo !== undefined ? +args.solo : -1, noduck = !!args.noduck, noclap = !!args.noclap;
 const w = new WebAssembly.Instance(mod, {}).exports;
 const chosen = {drums: "SID DIGI KIT", bass: "BODY HEAT", arp: "TWINKLE", lead: "CYBER LEAD", pad: "VELVET STRINGS", ...JSON.parse(args.chosen || "{}")};
-I.setupSong(w, chosen); if (noduck) for (let t = 0; t < 4; t++) w.w_duck(t, 0); if (noclap) w.w_clap(0, 0, 0, 1); if (args.every) w.w_clap(I.SONG.clap[0], I.SONG.clap[1], I.SONG.clap[2], +args.every);
+if (args.claps) I.setClaps(args.claps.replace(/_/g, ' ')); if (args.beat) I.setBeat(args.beat); I.setupSong(w, chosen); if (args.bpm) w.w_gset(I.ID.G_BPM, +args.bpm); if (noduck) for (let t = 0; t < 4; t++) w.w_duck(t, 0); if (noclap) w.w_clap(0, 0, 0, 1); if (args.every) w.w_clap(I.SONG.clap[0], I.SONG.clap[1], I.SONG.clap[2], +args.every);
 const kill = () => { if (args.nochorus) w.w_gset(I.ID.G_MFXTYPE, 0);
   for (let t = 0; t < 4; t++) { if (args.noglide) w.w_tset(t, I.ID.P_GLIDE, 0); if (args.novib) { w.w_tset(t, I.ID.P_LD_PIT, 0); w.w_tset(t, I.ID.P_LD_SHP, 0); } } };
 kill();
@@ -13,7 +13,7 @@ const arr = args.arrange ? args.arrange.split(',').map(Number) : I.SONG.arrange;
 let si = 0; I.loadSection(w, I.SONG.sections[arr[0]], chosen);
 if (solo >= 0) for (let t = 0; t < 4; t++) if (t !== solo) w.w_tset(t, I.ID.P_MUTE, 1);
 w.w_transport(1);
-const FS = 44100, total = Math.round(arr.length * 16 * 60 / I.SONG.bpm * FS) + FS * 2;
+const FS = 44100, total = Math.round(arr.length * 16 * 60 / (+args.bpm || I.SONG.bpm) * FS) + FS * 2;
 const pcm = new Int16Array(total * 2); let last = 0, vmax = 0, peak = 0, clip = 0, ss = 0;
 for (let f = 0; f + 128 <= total; f += 128) {
   const idx = w.w_seqidx(0);

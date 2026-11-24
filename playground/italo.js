@@ -99,12 +99,50 @@ const MELODY = [
   [32, 74, 3], [35, 74, 2], [38, 72, 1], [39, 74, 2], [41, 79, 4], [45, 77, 1], [46, 76, 2],
   [48, 76, 6], [54, 74, 2], [56, 71, 2], [58, 76, 6]
 ];
-function drumPattern(style) {          /* kick on every beat, clap + snare on 2 and 4, 16th hats, open hat off the beat */
+/* where the claps fall in a bar (16ths); the last bar of each two can differ (a roll into the next phrase) */
+const CLAPS = {
+  "2 and 4": [[4, 12], [4, 12]],
+  "triple 16ths": [[4, 12, 13, 14], [4, 12, 13, 14]],     /* 4 e &: ka-ka-ka on the last beat */
+  "triple 8ths": [[4, 10, 12, 14], [4, 10, 12, 14]],      /* 3&, 4, 4&: a lazier clap-clap-clap */
+  "roll": [[4, 12], [4, 12, 13, 14, 15]]                  /* a 16th roll into every other bar */
+};
+let clapStyle = "2 and 4", beatStyle = "Italo";
+function setClaps(name) { if (CLAPS[name]) clapStyle = name; }
+function setBeat(name) { if (BEATS[name]) beatStyle = name; }
+/* "Spacer": transcribed from a recreation of Charlie's Spacer Woman (1983) loop, 123.75 BPM, two bars:
+ * electro kick on 1, 8, 9, 11; snare + clap on 2 and 4; 16th hats accented on steps 3 and 6;
+ * bar 2 ends in a run of six 16th claps (accents on 13 and 15) */
+function acc(a) { a.acc = 1; return a; }
+function spacerBar(bar2) {
   const s = [];
+  for (let b = 0; b < 16; b++) {
+    const n = [];
+    if ([0, 7, 8, 10].includes(b)) n.push(K);
+    if (b === 4 || b === 12) n.push(SN, CL);
+    else if (bar2 && b >= 10) n.push(CL);
+    n.push(HC);
+    s.push(b === 2 || b === 5 || (bar2 && (b === 12 || b === 14)) ? acc(n) : n);
+  }
+  return s;
+}
+const BEATS = {Italo: null, Spacer: [spacerBar(0), spacerBar(1)]};
+function drumPattern(style) {          /* kick on every beat, claps (CLAPS), 8th hats, open hat off the beat */
+  const s = [];
+  if (BEATS[beatStyle]) {               /* a transcribed beat: its bars over and over (the Intro drops its kick) */
+    const B = BEATS[beatStyle];
+    for (let i = 0; i < 64; i++) {
+      const v = B[Math.floor(i / 16) % B.length][i % 16];
+      const n = style === "hats" ? v.filter(x => x !== K) : v.slice();
+      if (v.acc) n.acc = 1;
+      s.push(n);
+    }
+    return s;
+  }
   for (let i = 0; i < 64; i++) {
     const b = i % 16, n = [];
     if (style !== "hats" && b % 4 === 0) n.push(K);
-    if (b === 4 || b === 12) n.push(CL, SN);
+    const cl = CLAPS[clapStyle][Math.floor(i / 16) % 2];
+    if (cl.includes(b)) n.push(CL); if (b === 4 || b === 12) n.push(SN);
     if (b % 4 === 2) n.push(HO); else if (style === "busy" || b % 4 === 0) n.push(HC);
     if (style === "fill" && i >= 56) { n.length = 0; if (i % 4 === 0) n.push(K); n.push([TH, TH, TM, TM, TL, TL, TL, TL][i - 56]); }
     s.push(n.slice(0, 4));
@@ -121,7 +159,7 @@ const SONG = {
   clap: [80, 100, 90, 4],       /* INFINITY CLAP: wet, feed (how long the wash hangs), swell (the reverse in), every Nth clap */                  /* DUCK REL: about 250 ms, the kick's beat at 118 BPM */
   arrange: [0, 1, 2, 3, 4, 2, 3],  /* sections in order, 4 bars each */
   sections: [
-    {name: "Intro", drums: "hats", bass: "gallop", arp: null, lead: "strings"},
+    {name: "Intro", drums: "beat", bass: "gallop", arp: null, lead: "strings"},
     {name: "Twinkle", drums: "beat", bass: "gallop", arp: "twinkle", lead: "strings"},
     {name: "Hook", drums: "beat", bass: "gallop", arp: "twinkle", lead: "melody"},
     {name: "Hook fill", drums: "fill", bass: "gallop", arp: "twinkle", lead: "melody"},
@@ -161,7 +199,8 @@ function writeSteps(w, t, notes, gate) {
     if (v === "tie") { w.w_step(t, i, 0, 0, ID.ST_TIE, 0, 0); continue; }
     const a = v == null ? [] : Array.isArray(v) ? v : [v];
     let p = 0; a.forEach((n, k) => { p |= n << (8 * k); });
-    w.w_step(t, i, a.length, p >>> 0, a.length ? ID.ST_NOTE : ID.ST_REST, a.length && i % 16 === 0 ? ID.SF_ACCENT : 0, a.length ? 100 : 0);
+    const ac = v && v.acc !== undefined ? v.acc : i % 16 === 0;
+    w.w_step(t, i, a.length, p >>> 0, a.length ? ID.ST_NOTE : ID.ST_REST, a.length && ac ? ID.SF_ACCENT : 0, a.length ? (ac ? 112 : 96) : 0);
   }
 }
 function partSteps(kind, part) {
@@ -196,5 +235,5 @@ function setupSong(w, chosen) {
   SONG.duck.forEach((a, t) => w.w_duck(t, a)); w.w_duckrel(SONG.duckRel);
   w.w_clap(SONG.clap[0], SONG.clap[1], SONG.clap[2], SONG.clap[3]);
 }
-const ITALO = {ID, SOUNDS, SONG, findSound, applySound, setupSong, loadSection, writeSteps, partSteps};
+const ITALO = {ID, SOUNDS, SONG, CLAPS, BEATS, setClaps, setBeat, findSound, applySound, setupSong, loadSection, writeSteps, partSteps};
 if (typeof module !== "undefined") module.exports = ITALO;
