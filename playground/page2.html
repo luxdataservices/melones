@@ -227,7 +227,7 @@ async function load() {
   const bin = Uint8Array.from(atob(WASM_GZ), c => c.charCodeAt(0));
   const raw = await new Response(new Blob([bin]).stream().pipeThrough(new DecompressionStream("gzip"))).arrayBuffer();
   w = (await WebAssembly.instantiate(raw, {})).instance.exports;
-  I.setLen(16);
+  I.setLen(64);
   I.setupSong(w, {drums: P(0).sound, bass: P(1).sound, arp: P(2).sound, lead: P(3).sound});
   loadSection(0, true); applyArpSync();
   buildFx(); buildLanes(); buildSecs(); buildKeys(); selectTrack(3);
