@@ -16,7 +16,7 @@ enum { DVT_PUNCH, DVT_ROUND, DVT_SNARE, DVT_CLAP, DVT_HATC, DVT_HATO, DVT_TOM, D
 #include "drum_808.c"
 #include "x0x/drum909.c"
 
-enum { DK_808 = 4, DK_909 = 5, DK_SID = 6, DK_CR78 = 7, DK_FM = 8 }; /* Retain the stored value of existing 808 patches. */
+enum { DK_808 = 4, DK_909 = 5, DK_SID = 6, DK_CR78 = 7, DK_FM = 8, DK_SIMMONS = 9 }; /* Retain the stored value of existing 808 patches. DK_SIMMONS: Melones, KIT SID's engine with its own drums */
 static const uint8_t DV_TYPE_LANE[DVT_COUNT] = {
     DV_KICK, DV_KICK, DV_SNARE, DV_CLAP, DV_HATC, DV_HATO, DV_TOM, DV_TOM, DV_RIM, DV_RIM, DV_BELL, DV_BELL,
 };
@@ -43,10 +43,10 @@ static uint32_t drum_gm(const int16_t *p,uint32_t note,int32_t *st);
 static int32_t drum_event_pitch;
 static uint32_t drum_event_length;
 static int drum_is909(const track_t *t) { return t->p[P_E0] == DK_909; }
-static int drum_issid(const track_t *t) { return t->p[P_E0] == DK_SID; }
+static int drum_issid(const track_t *t) { return t->p[P_E0] == DK_SID || t->p[P_E0] == DK_SIMMONS; }
 static int drum_iscr(const track_t *t) { return t->p[P_E0] == DK_CR78; }
 static int drum_isfm(const track_t *t) { return t->p[P_E0] == DK_FM; }
-static int drum_islane(const track_t *t) { return t->p[P_E0] >= DK_CR78; }   /* the lane kits (drum_lanes.c) */
+static int drum_islane(const track_t *t) { return t->p[P_E0] == DK_CR78 || t->p[P_E0] == DK_FM; }   /* the lane kits (drum_lanes.c) */
 static int drum_isone(const track_t *t) { return t->p[P_E0] >= DK_SID; }      /* a whole kit on one voice */
 typedef struct dsk_part dsk_part_t;
 static uint32_t dsk_bytes(void);
@@ -170,7 +170,7 @@ static void drum_block(track_t *t)
     if(drum_is909(t)) { drum909_part_t *k=drum909_of(t); if(k)k->nz=d9_noise_block(&k->d,CTL); }
 }
 
-static const char *const N_DRUM_KIT[] = {"808", "808", "808", "808", "808", "909", "SID", "CR78", "FM"};
+static const char *const N_DRUM_KIT[] = {"808", "808", "808", "808", "808", "909", "SID", "CR78", "FM", "SIMMONS"};
 static const char *const N_DRUM_KICK[] = {"PUNCH", "ROUND"};
 
 /* General MIDI notes 35..81 -> the drum (DVT_*; DVT_PUNCH: the kick KICK picks) and semitones from its
@@ -373,7 +373,7 @@ static void drum_note_on(track_t *t, voice_t *v)
 static int32_t drum_amp(track_t *t, voice_t *v, int32_t adsr)
 {
     if(v->s[2]>=DK_SID || drum_isone(t)) {               /* the chip, the lane kits: on while any of it sounds */
-        if(v->s[2]==t->p[P_E0] && (drum_issid(t) ? dsk_tick(t) : dlk_tick(t))) { v->env=1<<24; return 32767*127/(v->vel?v->vel:1); }
+        if(v->s[2]==(drum_issid(t)?DK_SID:t->p[P_E0]) && (drum_issid(t) ? dsk_tick(t) : dlk_tick(t))) { v->env=1<<24; return 32767*127/(v->vel?v->vel:1); }
         v->active=v->gate=v->stage=0; v->env=0; return 0;
     }
     if(v->s[5] && v->s[3]<=0){v->active=v->gate=v->stage=0;v->env=0;return 0;}
@@ -425,12 +425,12 @@ static __attribute__((noinline)) void drum_color(drum_lane_t *L,int32_t value,in
 }
 static void drum_render_into(track_t *t,voice_t *v,int32_t *out,uint32_t n,const vmod_t *m,dr_scratch_t *scratch,const int16_t *p)
 {
-    if (p[P_E0] == DK_SID) {
+    if (p[P_E0] == DK_SID || p[P_E0] == DK_SIMMONS) {
         if (v->s[2] == DK_SID)
             dsk_render(t, out, n > CTL ? CTL : n, m, p);
         return;
     }
-    if (p[P_E0] >= DK_CR78) {
+    if (p[P_E0] == DK_CR78 || p[P_E0] == DK_FM) {
         if (v->s[2] == p[P_E0])
             dlk_render(t, out, n > CTL ? CTL : n, m, p);
         return;
@@ -487,6 +487,7 @@ static const preset_t DRUM_PRESETS[] = {
     {"SID DIGI", {DK_SID, 64, 80, 64, 64, 100, 1, 0}, {0, 100, 127, 100}, 0, 0},   /* kick, snare on $D418 */
     {"CR78 KIT", {DK_CR78, 64, 64, 64, 64, 100, 0, 0}, {0, 100, 127, 100}, 0, 0},
     {"FM KIT", {DK_FM, 64, 64, 64, 64, 100, 0, 0}, {0, 100, 127, 100}, 0, 0},
+    {"SIMMONS KIT", {DK_SIMMONS, 64, 96, 64, 64, 100, 0, 0}, {0, 100, 127, 100}, 0, 0},   /* Melones: SDS-V on the SID */
 };
 /* KIT SID: KICK is DIGI (KICK and SNARE on $D418), DRV the filter's resonance */
 static const char *const N_DRUM_DIGI[] = {"OFF", "ON"};
@@ -504,7 +505,7 @@ static const engine_t ENG_DRUM = {
     .name = "DRUM",
     .page_title = {"KIT", "HIT"},
     .edit = {
-        {"KIT", F_ENUM, DK_808, DK_FM, DK_808, N_DRUM_KIT, 0},
+        {"KIT", F_ENUM, DK_808, DK_SIMMONS, DK_808, N_DRUM_KIT, 0},
         {"TUNE", F_PCT, 0, 127, 64, 0, 0},
         {"TONE", F_PCT, 0, 127, 64, 0, 0},
         {"DECY", F_PCT, 0, 127, 64, 0, 0},

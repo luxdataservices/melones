@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Melones Italo</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Rubik:wght@400;500;700;800&family=Silkscreen&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Rubik:wght@400;500;700;800&family=Silkscreen&family=Barlow+Condensed:wght@500;600;700&family=Share+Tech+Mono&display=swap" rel="stylesheet">
 <style>
 /* VOICE: a toy for a night drive, playful but precise
    IDEA: the pocket synth's 4-track mode, housed in a melon rind
@@ -84,11 +84,64 @@ input[type=text]{font:16px Rubik,system-ui,sans-serif;min-height:44px;border-rad
 @media(max-width:820px){.top,.below{grid-template-columns:minmax(0,1fr)}.lane{grid-template-columns:minmax(0,1fr)}.lh{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);align-items:center}.lh .t{grid-column:1/-1}.key small{display:none}}
 @media(prefers-reduced-motion:reduce){*{transition:none!important}}
 </style>
+<style>
+/* CRUMAR: a crusty late-70s Italian panel. Worn beige backdrop; black matte panel between walnut end cheeks;
+   cream condensed legends; orange / red / mustard / olive section stripes; rocker tabs; black knobs with cream
+   pointers; a red LED readout. No glow anywhere. */
+:root,:root[data-theme=light],:root[data-theme=dark]{color-scheme:light;--bg:#d8ccb2;--ink:#231c14;--soft:#5b4c38;--panel:#1b1a18;--panel2:#262421;--cream:#ece2c8;--leg:#e3d6b4;--orange:#d9692a;--red:#b8352a;--mustard:#c99a2e;--olive:#7d8a4a;--led:#ff3b2a;--wood1:#5a3218;--wood2:#7a4624}
+body{background:#d8ccb2 radial-gradient(circle at 20% 10%,#e7dcc3,transparent 60%);font-family:"Barlow Condensed",Rubik,system-ui,sans-serif;font-size:17px}
+body::before{content:"";position:fixed;inset:0;pointer-events:none;opacity:.35;background-image:radial-gradient(#8a7a5c 0.6px,transparent 0.7px),radial-gradient(#fff6 0.6px,transparent 0.7px);background-size:7px 7px,11px 11px;background-position:0 0,3px 5px}
+h1{display:block;font:700 clamp(34px,5vw,52px)/1 "Barlow Condensed",system-ui,sans-serif;letter-spacing:.02em;color:#231c14;background:none;-webkit-background-clip:border-box;background-clip:border-box;filter:none;text-transform:uppercase}
+h1::after{content:"";display:block;width:min(420px,70%);height:8px;margin-top:8px;background:linear-gradient(90deg,var(--red) 0 25%,var(--orange) 25% 50%,var(--mustard) 50% 75%,var(--olive) 75%)}
+.lede,.note{color:var(--soft)}
+h2{font-family:"Barlow Condensed",system-ui,sans-serif;text-transform:uppercase;letter-spacing:.03em;color:#231c14}
+.dev{position:relative;background:linear-gradient(180deg,#2a2824,var(--panel) 6%,var(--panel) 94%,#121110);border-radius:6px;border-left:26px solid var(--wood1);border-right:26px solid var(--wood1);border-image:repeating-linear-gradient(180deg,var(--wood1) 0 7px,var(--wood2) 7px 11px,#4a2912 11px 17px,var(--wood2) 17px 22px) 0 26;box-shadow:0 10px 0 -4px #0003,0 18px 30px -12px #0006;color:var(--leg)}
+.screen{background:#140504;border-radius:3px;box-shadow:inset 0 2px 6px #000,0 0 0 2px #3a3733;color:var(--led);font-family:"Share Tech Mono",Silkscreen,monospace}
+#sec{font-family:"Share Tech Mono",monospace;letter-spacing:.08em;text-shadow:none;color:var(--led)}
+.srow{color:#d0412f}
+#play{background:var(--red);color:var(--cream);border-radius:3px;box-shadow:0 3px 0 #6d1d15;text-transform:uppercase;letter-spacing:.06em}
+#play.on{background:#6d1d15;color:var(--cream);box-shadow:inset 0 2px 0 #3a0e09}
+button,select{border-radius:3px;font-family:"Barlow Condensed",system-ui,sans-serif;font-size:16px}
+.secs button,.lh .b button,.pick button{background:#3a3733;color:var(--leg);box-shadow:0 3px 0 #0b0a09;text-transform:uppercase;letter-spacing:.04em}
+.secs button.on{background:var(--mustard);color:#1b1a18;box-shadow:inset 0 2px 0 #0004}.secs button.song.on{background:var(--cream);color:#1b1a18}
+.secs button.next{box-shadow:0 0 0 2px var(--mustard) inset}
+select,input[type=text]{background:var(--cream);color:#231c14;border-radius:3px}
+.bpm{color:var(--leg)}.bpm input{accent-color:var(--orange)}
+.fx{background:#262421;border-radius:4px;box-shadow:inset 0 0 0 1px #3d3a35;border-top:6px solid var(--orange)}
+.grp{color:var(--cream);text-transform:uppercase;letter-spacing:.06em}.grp span{color:#a89a7c}
+.kl{color:var(--leg);font-family:"Barlow Condensed",system-ui,sans-serif;font-weight:600;letter-spacing:.05em}
+.kv{color:var(--led);font-family:"Share Tech Mono",monospace}
+.knob{background:radial-gradient(circle at 40% 35%,#4a4642,#1d1b19 60%,#0c0b0a);box-shadow:0 0 0 3px #0c0b0a,0 0 0 5px #4a4642,0 4px 4px #0008}
+.knob::after{background:var(--cream)}
+.knob.pink{background:radial-gradient(circle at 40% 35%,#4a4642,#1d1b19 60%,#0c0b0a);box-shadow:0 0 0 3px #0c0b0a,0 0 0 5px var(--red),0 4px 4px #0008}
+.lane{background:#22201d;border-radius:4px;box-shadow:inset 0 0 0 1px #3d3a35;border-left:8px solid var(--acc)}
+.lane[data-t="0"]{--acc:var(--red)}.lane[data-t="1"]{--acc:var(--orange)}.lane[data-t="2"]{--acc:var(--mustard)}.lane[data-t="3"]{--acc:var(--olive)}
+.lane .lh .t span:first-child{color:var(--cream);text-shadow:none;text-transform:uppercase;letter-spacing:.06em}
+.lane.sel{background:#2d2a26;box-shadow:inset 0 0 0 2px var(--acc)}
+.cell{background:#3a3733;border-radius:2px;box-shadow:inset 0 -2px 0 #0006}.cell.beat{background:#4a4642}
+.cell.on,.cell.on.cl{background:var(--acc);box-shadow:inset 0 -2px 0 #0005}
+.lane[data-t="0"] .cell.on.cl{background:var(--mustard)}
+.cell.tie{background:color-mix(in srgb,var(--acc) 55%,#3a3733)}
+.cell .nn{color:#1b1a18;font-family:"Share Tech Mono",monospace}
+.cell.ph::after{box-shadow:0 0 0 2px var(--cream)}
+.cell.roll{background-image:repeating-linear-gradient(90deg,#1b1a18 0 2px,transparent 2px 5px)}
+.cell .rn{color:#1b1a18;text-shadow:none}
+.lh .b button.kb.on,.lh .b button.steps.on{background:var(--acc);color:#1b1a18;box-shadow:inset 0 2px 0 #0004}
+.lh .b button.solo.on{background:var(--mustard);color:#1b1a18}.lh .b button.mute.on{background:var(--red);color:var(--cream)}.lh .b button.latch.on{background:var(--orange);color:#1b1a18}
+.kbd{box-shadow:0 0 0 4px #0c0b0a;border-radius:3px}
+.key.w{background:linear-gradient(#f3ead2,#e2d6b8);border-right:1px solid #a89a7c}
+.key.b{background:linear-gradient(#2a2824,#0c0b0a)}
+.key.on.w{background:linear-gradient(#f0b27a,var(--orange))}.key.on.b{background:linear-gradient(#e0603f,var(--red))}
+pre{background:#ece2c8;color:#231c14;box-shadow:inset 0 0 0 1px #b9aa88;border-radius:3px}
+.act{background:var(--orange);color:#1b1a18;box-shadow:0 3px 0 #7a3a12}
+#err{background:var(--red)}
+@media(max-width:820px){.dev{border-left-width:12px;border-right-width:12px;border-image-width:0 12px}}
+</style>
 </head>
 <body>
 <div class="band">
 <h1>Melones Italo</h1>
-<p class="lede">Four tracks of chiptune Italo disco, played by the Melones firmware code compiled for your browser: SID bass, arps and leads, a SID drum kit, kick ducking and the INFINITY CLAP. Nothing here touches your FM-1.</p>
+<p class="lede" style="display:block">Four tracks of chiptune Italo disco, played by the Melones firmware code compiled for your browser: SID bass, arps and leads, SID, 808 and Simmons kits, kick sidechain compression and the INFINITY CLAP. Nothing here touches your FM-1.</p>
 <div id="err"></div>
 <div class="dev">
   <div class="top">
@@ -96,14 +149,13 @@ input[type=text]{font:16px Rubik,system-ui,sans-serif;min-height:44px;border-rad
       <div class="srow"><span id="pos">BAR 1.1</span><span id="vox">VOICES 0/8</span></div>
       <div id="sec">INTRO</div>
       <div class="scope"><canvas id="scope"></canvas></div>
-      <div class="srow"><span id="bpmv2">116 BPM · A MINOR</span><span id="keysfor">KEYS: LEAD</span></div>
+      <div class="srow"><span id="bpmv2">124 BPM · A MINOR</span><span id="keysfor">KEYS: LEAD</span></div>
     </div>
     <div class="ctl">
-      <div class="row"><button id="play">Play</button><label class="bpm">Tempo <input id="bpm" type="range" min="96" max="136" value="116"><span id="bpmv">116</span></label></div>
-      <div class="row"><label class="bpm" style="flex:0 1 auto">Theme <select id="theme" aria-label="Theme"></select></label><label class="bpm" style="flex:0 1 auto">Key <select id="key" aria-label="Key"></select></label></div>
-      <p class="note" id="themenote" style="margin:0;color:#cfe5d4"></p>
+      <div class="row"><button id="play">Play</button><label class="bpm">Tempo <input id="bpm" type="range" min="90" max="160" value="124"><span id="bpmv">124</span></label></div>
+      <div class="row"><label class="bpm" style="flex:0 1 auto">Key <select id="key" aria-label="Key"></select></label></div>
       <div class="row secs" id="secs"></div>
-      <p class="note" style="margin:0;color:#cfe5d4">Song follows the arrangement. Tap a section to queue it: it starts when the current 4 bars end.</p>
+      <p class="note" style="margin:0;color:#cfe5d4">Scenes bring lanes in and out. Song plays Intro, Build, Full, Break, each for 4 bars. Tap a scene to queue it for the next bar.</p>
     </div>
   </div>
   <div class="fx" id="fx"></div>
@@ -115,7 +167,7 @@ input[type=text]{font:16px Rubik,system-ui,sans-serif;min-height:44px;border-rad
   <div>
     <h2>Play it</h2>
     <p>Press Play, or the space bar. Click steps to add or remove notes; drums have a row per drum. Click a lane's name area to choose which track the keyboard and the sound knobs control. Computer keys: Z S X D C V… is the lower octave, Q 2 W 3 E R… the upper.</p>
-    <p>Theme swaps the chords, bassline and lead melody together, so every part agrees, and Key moves all of it. The drum lane's second menu picks the beat: Italo, Spacer (transcribed from your Spacer Woman loop, with its bap-bap-bap claps closing every second bar), or 1986 (transcribed from your 1986 loop). Each melodic lane's Held key menu turns one held key into a part: an octave bounce on the bass, a chord or a chord arpeggio (built in the song's key) on the others. Latch keeps it going when you let go; Steps off silences the lane's pattern so you can play it live. Solo plays one lane alone (shift-click to solo several). DUCK on a lane is how hard the kick pushes it down; DUCK REL is how fast it comes back. The INFINITY CLAP sends each clap into a huge room: SWELL plays the start of that room backwards so it rises into the next clap, FEED sets how long the wash hangs (all the way to forever), WET how loud it all is, and EVERY picks which claps get it (every 4th: the last clap of each two bars).</p>
+    <p>Each lane's Preset menu sets its sound and its one-bar pattern. They're all written over A minor, so any mix goes together, and Key moves all the melodic lanes. CLAP CHAOS gives claps, at random, a flam, a triplet retrigger or a 32nd ratchet (CHAOS STYLE picks, or ALL). LOWPASS and RESO on the drum lane filter the whole kit, down to a muffled thump. Shift-click a drum step to give it a roll: x2, x3, x4 fading in, x6 fading out, or none; the Trap beat is full of them. The drum lane's second menu picks the beat: Italo, Spacer (transcribed from your Spacer Woman loop, with its bap-bap-bap claps closing every second bar), or 1986 (transcribed from your 1986 loop). Each melodic lane's Held key menu turns one held key into a part: an octave bounce on the bass, a chord or a chord arpeggio (built in the song's key) on the others. Latch keeps it going when you let go; Steps off silences the lane's pattern so you can play it live. Solo any lanes you like: the soloed ones play together. DUCK MODE COMP is a sidechain compressor keyed by the kick's own audio: the harder the kick and the lower THRESH, the deeper the pump, shaped like the kick itself (TRIGGER is the simpler fixed dip). DUCK ON picks which kicks pump the mix: ALL of them, or only the BEATS (the kicks on 1, 2, 3, 4, not the syncopated ones), and DUCK EVERY thins that to every 2nd or 4th. WARP on the bass sweeps its filter open and shut over WARP RATE. DUCK on a lane is how hard the kick pushes it down; DUCK REL is how fast it comes back. The INFINITY CLAP sends each clap into a huge room: SWELL plays the start of that room backwards so it rises into the next clap, FEED sets how long the wash hangs (all the way to forever), WET how loud it all is, and EVERY picks which claps get it (every 4th: the last clap of each two bars).</p>
   </div>
   <div>
     <h2>Keep a sound</h2>
@@ -139,56 +191,62 @@ const ENUMS = {MODEL: ["6581", "8580", "C64 6581", "C64 8580"], WAVE: ["TRI", "S
   STACK: ["ONE", "DETUNE", "OCT", "FIFTH", "MAJOR", "SYNC", "RING", "SUB"], MODE: ["LP", "BP", "HP", "NOTCH", "LP+BP", "BP+HP", "ALL", "OFF"],
   VOICE: ["POLY", "MONO", "LEG", "UNI"], EVERY: ["ALL", "2ND", "4TH", "8TH"]};
 let w, ctx, node, ready = false, playing = false, sel = 3, oct = 0, cur = 0, queued = null, songMode = true, arrPos = 0, lastIdx = -1;
-const chosen = {drums: I.SONG.defaults[0], bass: I.SONG.defaults[1], arp: I.SONG.defaults[2], lead: I.SONG.defaults[3], pad: "VELVET STRINGS"};
-const orig = I.SONG.sections.map(sec => KINDS.map(k => I.partSteps(k, sec[k])));
-const cp = v => Array.isArray(v) ? Object.assign(v.slice(), v.acc ? {acc: 1} : {}) : v;
-const pat = I.SONG.sections.map(sec => KINDS.map(k => I.partSteps(k, sec[k]).map(cp)));
-let beat = "Italo";
-function setTheme(name) {               /* new bass, arp, pad and lead steps for every section; the drums stay */
-  I.setTheme(name);
-  const th = I.THEMES[name];
-  if (th.sounds) for (const k in th.sounds) { chosen[k] = th.sounds[k]; }
-  if (th.sounds) for (let t = 1; t < 4; t++) ensureSound(t, curSound(t));
-  if (th.key !== undefined) { $("key").value = String((9 + th.key) % 12); $("key").dispatchEvent(new Event("change")); }
-  if (th.bpm) { $("bpm").value = th.bpm; $("bpm").dispatchEvent(new Event("input")); }
-  I.SONG.sections.forEach((sec, i) => { for (let t = 1; t < 4; t++) { pat[i][t] = I.partSteps(KINDS[t], sec[KINDS[t]]).map(cp); orig[i][t] = pat[i][t].map(cp); } });
-  for (let t = 1; t < 4; t++) writeTrack(t);
-  $("themenote").textContent = I.THEMES[name].note + ". Key moves it all.";
-  buildLanes();
-}
-function setBeat(name) {                 /* new drum steps for every section; the user's other lanes stay */
-  beat = name; I.setBeat(name);
-  I.SONG.sections.forEach((sec, i) => { pat[i][0] = I.partSteps("drums", sec.drums).map(cp); orig[i][0] = pat[i][0].map(cp); });
-  const tempo = {Spacer: 124, "1986": 125}[name];
-  if (tempo) { $("bpm").value = tempo; $("bpm").dispatchEvent(new Event("input")); }
-  writeTrack(0); buildLanes();
+const cp = v => Array.isArray(v) ? Object.assign(v.slice(), v.acc ? {acc: 1} : {}, v.roll ? {roll: v.roll.slice()} : {}, v.slide ? {slide: 1} : {}) : v;
+const ROLLS = [null, [2, 1, 96, 112], [3, 1, 80, 110], [4, 2, 50, 120], [6, 2, 120, 40]];   /* shift-click cycles these */
+/* LANE PRESETS: each lane's sound and one-bar pattern; every scene shares the four lanes (an edit shows everywhere) */
+const preset = [0, 1, 0, 0];
+const P = t => I.LANE[KINDS[t]][preset[t]];
+const laneSteps = [0, 1, 2, 3].map(t => P(t).steps().map(cp)), laneOrig = laneSteps.map(a => a.map(cp));
+const pat = I.SCENES.map(() => laneSteps), orig = I.SCENES.map(() => laneOrig);
+function setPreset(t, k) {
+  preset[t] = k; const p = P(t);
+  laneSteps[t] = p.steps().map(cp); laneOrig[t] = laneSteps[t].map(cp);
+  ensureSound(t, p.sound, true); writeTrack(t);
+  if (t === 0 && p.bpm) { $("bpm").value = p.bpm; $("bpm").dispatchEvent(new Event("input")); }
+  buildLanes(); if (t === sel) buildSound();
 }
 const scopeBuf = new Float32Array(2048); let scopePos = 0;
-const fxState = {duckRel: I.SONG.duckRel, wet: I.SONG.clap[0], feed: I.SONG.clap[1], swell: I.SONG.clap[2], every: [1, 2, 4, 8].indexOf(I.SONG.clap[3]), duck: I.SONG.duck.slice()};
+const ENUMS2 = {CST: ["ALL", "FLAM", "TRIPLET", "RATCHET"], DMODE: ["TRIGGER", "COMP"], DON: ["ALL", "BEATS"], DEV: ["ALL", "2ND", "4TH"], WR: ["4 BARS", "2 BARS", "1 BAR", "1/2", "1/4"],
+  ARATE: ["1/8", "1/16", "1/32", "16T", "8T"]};
+const warp = {depth: 30, rate: 2};        /* the bass's cutoff warp: LFO -> filter, synced (rate: index into WR) */
+const dlp = {cut: 127, res: 0};           /* the drum lane's low pass (127: open, bypassed) */
+const arpSync = {rate: 1, gate: 64};      /* the arp lane's step rate against the song (index into ARATE) and gate */
+const ARATE_DIV = [1, 2, 3, 5, 4];        /* N_DIV: 1/8, 1/16, 1/32, 16T, 8T */
+function applyWarp() {
+  w.w_tset(1, ID.P_LD_FLT, warp.depth); w.w_tset(1, ID.P_LSYNC, [1, 2, 3, 4, 5][warp.rate]);
+  w.w_tset(1, ID.P_LTRIG, 1); w.w_tset(1, ID.P_LWAVE, 1);           /* free-running triangle: one sweep across the notes */
+}
+function applyArpSync() {                 /* the pattern's steps and the held-key arpeggio, both at RATE and GATE */
+  const d = ARATE_DIV[arpSync.rate];
+  w.w_tset(2, ID.P_SDIV, d); w.w_tset(2, ID.P_ARATE, d); w.w_tset(2, ID.P_SGATE, arpSync.gate); w.w_tset(2, ID.P_AGATE, arpSync.gate);
+}
+const fxState = {chaos: I.SONG.chaos[0], cstyle: I.SONG.chaos[1], comp: I.SONG.duckComp[0], thresh: I.SONG.duckComp[1], duckOn: I.SONG.duckMode[0], duckEvery: [1, 2, 4].indexOf(I.SONG.duckMode[1]), duckRel: I.SONG.duckRel, wet: I.SONG.clap[0], feed: I.SONG.clap[1], swell: I.SONG.clap[2], every: [1, 2, 4, 8].indexOf(I.SONG.clap[3]), duck: I.SONG.duck.slice()};
 
 async function load() {
   const bin = Uint8Array.from(atob(WASM_GZ), c => c.charCodeAt(0));
   const raw = await new Response(new Blob([bin]).stream().pipeThrough(new DecompressionStream("gzip"))).arrayBuffer();
   w = (await WebAssembly.instantiate(raw, {})).instance.exports;
-  I.setupSong(w, chosen);
-  loadSection(0, true);
+  I.setLen(16);
+  I.setupSong(w, {drums: P(0).sound, bass: P(1).sound, arp: P(2).sound, lead: P(3).sound});
+  loadSection(0, true); applyArpSync();
   buildFx(); buildLanes(); buildSecs(); buildKeys(); selectTrack(3);
 }
 function err(m) { const e = $("err"); e.textContent = m; e.style.display = "block"; }
 
-/* ---- sections, sounds, steps ---- */
-function leadSoundFor(s) { return I.SONG.sections[s].lead === "strings" ? chosen.pad : chosen.lead; }
-function curSound(t) { return t === 3 ? leadSoundFor(cur) : chosen[KINDS[t]]; }
+/* ---- scenes, sounds, steps ---- */
+function curSound(t) { return P(t).sound; }
 let loaded = [];
 function ensureSound(t, name, force) {
   if (!force && loaded[t] === name) return;
   I.applySound(w, t, I.findSound(name)); loaded[t] = name;
   if (t && typeof keyShift !== "undefined") applyLive(t);
+  if (t === 1) applyWarp();
+  if (t === 2) applyArpSync();
 }
 function writeTrack(t) {
-  const sec = I.SONG.sections[cur], kind = KINDS[t], part = sec[kind];
-  const steps = stepsOn[t] ? pat[cur][t] : new Array(64).fill(null), gate = kind === "lead" && part === "strings" ? 120 : kind === "bass" ? 70 : 64;
-  I.writeSteps(w, t, steps, gate);
+  const on = stepsOn[t] && I.SCENES[cur].on[t];
+  I.writeSteps(w, t, on ? laneSteps[t] : new Array(16).fill(null), t === 2 ? arpSync.gate : P(t).gate || (t === 1 ? 70 : 64));
+  if (t === 2) applyArpSync();
 }
 function loadSection(s, force) {
   cur = s;
@@ -196,8 +254,7 @@ function loadSection(s, force) {
   if (sel !== undefined && $("snd")) buildSound();
 }
 function buildSecs() {
-  const S = I.SONG.sections;
-  $("secs").innerHTML = `<button class="song" data-s="song">Song</button>` + S.map((s, i) => `<button data-s="${i}">${s.name}</button>`).join("");
+  $("secs").innerHTML = `<button class="song" data-s="song">Song</button>` + I.SCENES.map((s, i) => `<button data-s="${i}">${s.name}</button>`).join("");
   for (const b of $("secs").children) b.addEventListener("click", () => {
     if (b.dataset.s === "song") { songMode = !songMode; queued = null; }
     else { songMode = false; const s = +b.dataset.s; if (!playing) { loadSection(s); } else queued = s; }
@@ -210,13 +267,16 @@ function refreshSecs() {
     if (b.dataset.s === "song") b.classList.toggle("on", songMode);
     else { b.classList.toggle("on", +b.dataset.s === cur); b.classList.toggle("next", +b.dataset.s === queued); }
   }
-  $("sec").textContent = I.SONG.sections[cur].name.toUpperCase() + (songMode ? "  ·  SONG" : "");
+  $("sec").textContent = I.SCENES[cur].name.toUpperCase() + (songMode ? "  ·  SONG" : "");
+  for (let t = 0; t < 4; t++) { const l = document.querySelector(`.lane[data-t="${t}"] .t .kv`); if (l) l.textContent = I.SCENES[cur].on[t] ? "" : "OUT"; }
 }
-function onBoundary() {          /* the drums reached step 63: the next 4 bars */
+let reps = 0;
+function onBoundary() {          /* the bar's last step: the next bar (in Song each scene plays 4 bars) */
   let next = cur;
+  if (queued === null && songMode && ++reps % 4) return;
   if (queued !== null) { next = queued; queued = null; }
-  else if (songMode) { arrPos = (arrPos + 1) % I.SONG.arrange.length; next = I.SONG.arrange[arrPos]; }
-  if (next !== cur) { loadSection(next); requestAnimationFrame(() => { refreshSecs(); buildLanes(); }); }
+  else if (songMode) { arrPos = (arrPos + 1) % I.SCENE_SONG.length; next = I.SCENE_SONG[arrPos]; }
+  if (next !== cur) { loadSection(next); requestAnimationFrame(refreshSecs); }
 }
 
 /* ---- knobs ---- */
@@ -244,26 +304,36 @@ function showKnob(k) {
   const el = $(k.id); if (!el) return; const v = k.get();
   el.style.setProperty("--a", (-135 + 270 * (v - k.lo) / (k.hi - k.lo)) + "deg");
   el.setAttribute("aria-valuenow", v);
-  $(k.id + "_v").textContent = k.e ? ENUMS[k.e][v] : String(v);
+  $(k.id + "_v").textContent = k.fmt ? k.fmt(v) : k.e ? (ENUMS[k.e] || ENUMS2[k.e])[v] : String(v);
 }
 let FXK = [];
 function buildFx() {
   FXK = [
+    knob("f_dmode", "DUCK MODE", 0, 1, () => fxState.comp, v => { fxState.comp = v; pushComp(); }, {e: "DMODE"}),
+    knob("f_thr", "THRESH", 0, 127, () => fxState.thresh, v => { fxState.thresh = v; pushComp(); }, {fmt: v => Math.round(-48 + 48 * v / 127) + " dB"}),
+    knob("f_don", "DUCK ON", 0, 1, () => fxState.duckOn, v => { fxState.duckOn = v; pushDuck(); }, {e: "DON"}),
+    knob("f_dev", "DUCK EVERY", 0, 2, () => fxState.duckEvery, v => { fxState.duckEvery = v; pushDuck(); }, {e: "DEV"}),
     knob("f_rel", "DUCK REL", 40, 100, () => fxState.duckRel, v => { fxState.duckRel = v; w.w_duckrel(v); }),
     knob("f_wet", "CLAP WET", 0, 127, () => fxState.wet, v => { fxState.wet = v; pushClap(); }, {pink: 1}),
     knob("f_feed", "CLAP FEED", 0, 127, () => fxState.feed, v => { fxState.feed = v; pushClap(); }, {pink: 1}),
     knob("f_swell", "CLAP SWELL", 0, 127, () => fxState.swell, v => { fxState.swell = v; pushClap(); }, {pink: 1}),
-    knob("f_every", "CLAP EVERY", 0, 3, () => fxState.every, v => { fxState.every = v; pushClap(); }, {pink: 1, e: "EVERY"})
+    knob("f_every", "CLAP EVERY", 0, 3, () => fxState.every, v => { fxState.every = v; pushClap(); }, {pink: 1, e: "EVERY"}),
+    knob("f_chaos", "CLAP CHAOS", 0, 127, () => fxState.chaos, v => { fxState.chaos = v; pushChaos(); }, {pink: 1}),
+    knob("f_cst", "CHAOS STYLE", 0, 3, () => fxState.cstyle, v => { fxState.cstyle = v; pushChaos(); }, {pink: 1, e: "CST"})
   ];
-  $("fx").innerHTML = `<div class="grp">Master<span>kick ducking · INFINITY CLAP</span></div>` + FXK.map(knobHtml).join("");
+  $("fx").innerHTML = `<div class="grp">Master<span>sidechain compressor · INFINITY CLAP</span></div>` + FXK.map(knobHtml).join("");
   FXK.forEach(bindKnob);
 }
+function pushChaos() { w.w_chaos(fxState.chaos, fxState.cstyle); }
+function pushComp() { w.w_duckcomp(fxState.comp, fxState.thresh); }
+function pushDuck() { w.w_duckmode(fxState.duckOn, [1, 2, 4][fxState.duckEvery]); }
 function pushClap() { w.w_clap(fxState.wet, fxState.feed, fxState.swell, [1, 2, 4, 8][fxState.every]); }
 
 /* ---- lanes ---- */
 const DROWS = [["KICK", [36]], ["CLAP", [39, 38]], ["HAT", [42]], ["OPEN", [46]], ["TOM", [45, 47, 50]]];
 const PC = ["C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"];
 const nn = n => PC[n % 12] + (Math.floor(n / 12) - 1);
+const LENP = () => 16;
 let laneKnobs = [];
 /* LIVE: what a held key does on a melodic lane (the lane's arpeggiator and chord keys; the steps are untouched) */
 const LIVE = {
@@ -296,30 +366,32 @@ function applyMutes() {           /* a soloed lane plays, the rest wait; mute al
     lane.classList.toggle("dim", mutes[t] || (any && !solos[t]));
   }
 }
-function soundsFor(t) { return t === 3 ? I.SOUNDS.lead : I.SOUNDS[KINDS[t]]; }
 function buildLanes() {
   laneKnobs = [];
   $("lanes").innerHTML = [0, 1, 2, 3].map(t => {
-    const list = soundsFor(t), part = I.SONG.sections[cur][KINDS[t]];
-    const which = t === 3 ? (part === "strings" ? "pad" : "lead") : KINDS[t];
-    const opts = list.map(s => `<option${s.name === chosen[which] ? " selected" : ""}>${s.name}</option>`).join("");
-    laneKnobs.push(knob(`dk${t}`, "DUCK", 0, 127, () => fxState.duck[t], v => { fxState.duck[t] = v; w.w_duck(t, v); }),
-                   knob(`lv${t}`, "LEVEL", 0, 127, () => w.w_tget(t, ID.P_LEVEL), v => w.w_tset(t, ID.P_LEVEL, v)));
+    const opts = I.LANE[KINDS[t]].map((p, k) => `<option value="${k}"${k === preset[t] ? " selected" : ""}>${p.name}</option>`).join("");
+    const K = {dk: knob(`dk${t}`, "DUCK", 0, 127, () => fxState.duck[t], v => { fxState.duck[t] = v; w.w_duck(t, v); }),
+               lv: knob(`lv${t}`, "LEVEL", 0, 127, () => w.w_tget(t, ID.P_LEVEL), v => w.w_tset(t, ID.P_LEVEL, v))};
+    if (t === 1) { K.wp = knob("wp1", "WARP", 0, 63, () => warp.depth, v => { warp.depth = v; applyWarp(); });
+                   K.wr = knob("wr1", "WARP RATE", 0, 4, () => warp.rate, v => { warp.rate = v; applyWarp(); }, {e: "WR"}); }
+    if (t === 0) { K.lp = knob("lp0", "LOWPASS", 0, 127, () => dlp.cut, v => { dlp.cut = v; w.w_lp(0, dlp.cut, dlp.res); }, {fmt: v => v >= 127 ? "OPEN" : String(v)});
+                   K.lr = knob("lr0", "RESO", 0, 127, () => dlp.res, v => { dlp.res = v; w.w_lp(0, dlp.cut, dlp.res); }); }
+    if (t === 2) { K.ar = knob("ar2", "RATE", 0, 4, () => arpSync.rate, v => { arpSync.rate = v; applyArpSync(); }, {e: "ARATE"});
+                   K.ag = knob("ag2", "GATE", 1, 127, () => arpSync.gate, v => { arpSync.gate = v; applyArpSync(); }); }
+    if (t) laneKnobs.push(K.dk); laneKnobs.push(K.lv); if (t === 1) laneKnobs.push(K.wp, K.wr); if (t === 0) laneKnobs.push(K.lp, K.lr); if (t === 2) laneKnobs.push(K.ar, K.ag);
     return `<div class="lane${t === sel ? " sel" : ""}" data-t="${t}">
-      <div class="lh"><div class="t"><span>${NAMES[t]}</span><span class="kv">${t === 3 ? (part === "strings" ? "PAD" : part ? "LEAD" : "—") : part ? "" : "—"}</span></div>
-        <select data-t="${t}" data-w="${which}" aria-label="${NAMES[t]} sound">${opts}</select>
-        ${t ? "" : `<select id="beat" aria-label="Beat">${Object.keys(I.BEATS).map(b => `<option${b === beat ? " selected" : ""}>${b}</option>`).join("")}</select>`}
+      <div class="lh"><div class="t"><span>${NAMES[t]}</span><span class="kv">${I.SCENES[cur].on[t] ? "" : "OUT"}</span></div>
+        <select data-t="${t}" aria-label="${NAMES[t]} preset">${opts}</select>
         ${t ? `<select class="live" data-l="${t}" aria-label="${NAMES[t]} live mode">${Object.keys(liveSet(t)).map(m => `<option${m === liveMode[t] ? " selected" : ""}>${m === "Off" ? "Held key: plain" : "Held key: " + m.toLowerCase()}</option>`).join("")}</select>
         <div class="b"><button class="latch${latch[t] ? " on" : ""}" data-t="${t}" aria-pressed="${latch[t]}">Latch</button><button class="steps${stepsOn[t] ? " on" : ""}" data-t="${t}" aria-pressed="${stepsOn[t]}">Steps</button></div>` : ""}
         <div class="b"><button class="kb${t === sel ? " on" : ""}" data-t="${t}">Keys</button><button class="mute${mutes[t] ? " on" : ""}" data-t="${t}" aria-pressed="${!!mutes[t]}">Mute</button><button class="solo${solos[t] ? " on" : ""}" data-t="${t}" aria-pressed="${!!solos[t]}">Solo</button></div>
-        <div class="mini">${t ? knobHtml(laneKnobs[2 * t]) : ""}${knobHtml(laneKnobs[2 * t + 1])}</div></div>
-      <div class="gridwrap"${stepsOn[t] ? "" : ' style="opacity:.35"'}><div class="grid ${t ? "mel" : ""}" id="g${t}">${gridHtml(t)}</div></div></div>`;
+        <div class="mini">${t ? knobHtml(K.dk) : ""}${knobHtml(K.lv)}</div>${t === 1 ? `<div class="mini">${knobHtml(K.wp)}${knobHtml(K.wr)}</div>` : ""}${t === 0 ? `<div class="mini">${knobHtml(K.lp)}${knobHtml(K.lr)}</div>` : ""}${t === 2 ? `<div class="mini">${knobHtml(K.ar)}${knobHtml(K.ag)}</div>` : ""}</div>
+      <div class="gridwrap"${stepsOn[t] ? "" : ' style="opacity:.35"'}><div class="grid ${t ? "mel" : ""}" id="g${t}" style="grid-template-columns:34px repeat(${LENP()},minmax(11px,1fr));min-width:${LENP() === 16 ? 320 : 780}px">${gridHtml(t)}</div></div></div>`;
   }).join("");
   laneKnobs.forEach(bindKnob);
   for (const s of $("lanes").querySelectorAll("select[data-t]")) s.addEventListener("change", () => {
-    const t = +s.dataset.t; chosen[s.dataset.w] = s.value; ensureSound(t, curSound(t)); selectTrack(t); buildLanes();
+    const t = +s.dataset.t; setPreset(t, +s.value); selectTrack(t);
   });
-  $("beat").addEventListener("change", () => setBeat($("beat").value));
   for (const s of $("lanes").querySelectorAll("select.live")) s.addEventListener("change", () => {
     const t = +s.dataset.l; liveMode[t] = Object.keys(liveSet(t))[s.selectedIndex]; applyLive(t); selectTrack(t);
   });
@@ -333,20 +405,28 @@ function buildLanes() {
   for (const b of $("lanes").querySelectorAll("button.kb")) b.addEventListener("click", () => selectTrack(+b.dataset.t));
   for (const b of $("lanes").querySelectorAll("button.mute")) b.addEventListener("click", () => { const t = +b.dataset.t; mutes[t] = !mutes[t]; applyMutes(); });
   for (const b of $("lanes").querySelectorAll("button.solo")) b.addEventListener("click", e => {
-    const t = +b.dataset.t; if (!(e.shiftKey || e.metaKey || e.ctrlKey)) for (let k = 0; k < 4; k++) if (k !== t) solos[k] = false;
-    solos[t] = !solos[t]; applyMutes();
+    const t = +b.dataset.t; solos[t] = !solos[t]; applyMutes();      /* solos add up: any lanes soloed play together */
   });
-  for (let t = 0; t < 4; t++) $("g" + t).addEventListener("click", e => { const c = e.target.closest(".cell"); if (c) toggle(t, +c.dataset.i, c.dataset.r); });
+  for (let t = 0; t < 4; t++) $("g" + t).addEventListener("click", e => {
+    const c = e.target.closest(".cell"); if (!c) return;
+    if (t === 0 && e.shiftKey) {                 /* shift-click a drum step: cycle its roll */
+      const i = +c.dataset.i, st = pat[cur][0]; if (!Array.isArray(st[i])) st[i] = [DROWS[+c.dataset.r][1][0]];
+      const k = ROLLS.findIndex(r => JSON.stringify(r) === JSON.stringify(st[i].roll || null));
+      const nx = ROLLS[(k + 1) % ROLLS.length]; if (nx) st[i].roll = nx.slice(); else delete st[i].roll;
+      writeTrack(0); $("g0").innerHTML = gridHtml(0); lastPh = []; return;
+    }
+    toggle(t, +c.dataset.i, c.dataset.r);
+  });
 }
 function gridHtml(t) {
-  const st = pat[cur][t];
+  const st = pat[cur][t].slice(0, LENP());
   const cls = i => `cell${i % 16 === 0 && i ? " bar" : ""}${i % 4 === 0 ? " beat" : ""}`;
   if (t === 0) return DROWS.map(([nm, notes], r) => `<div class="rl">${nm}</div>` + st.map((v, i) => {
-    const on = Array.isArray(v) && v.some(n => notes.includes(n));
-    return `<div class="${cls(i)}${on ? " on" + (r === 1 ? " cl" : "") : ""}" data-i="${i}" data-r="${r}" tabindex="-1" aria-label="${nm} step ${i + 1}"></div>`;
+    const on = Array.isArray(v) && v.some(n => notes.includes(n)), rl = on && v.roll ? v.roll[0] : 0;
+    return `<div class="${cls(i)}${on ? " on" + (r === 1 ? " cl" : "") : ""}${rl ? " roll" : ""}" data-i="${i}" data-r="${r}" tabindex="-1" aria-label="${nm} step ${i + 1}${rl ? ", roll of " + rl : ""}">${rl ? `<span class="rn">${rl}</span>` : ""}</div>`;
   }).join("")).join("");
-  return `<div class="rl">${t === 3 && I.SONG.sections[cur].lead === "strings" ? "CHRD" : "NOTE"}</div>` + st.map((v, i) => {
-    const tie = v === "tie", on = v != null && !tie, n = on ? (Array.isArray(v) ? v[0] : v) : 0;
+  return `<div class="rl">${st.some(v => Array.isArray(v) && v.length > 1) ? "CHRD" : "NOTE"}</div>` + st.map((v, i) => {
+    const tie = (v === "tie" || v === "tieS"), on = v != null && !tie, n = on ? (Array.isArray(v) ? v[0] : v) : 0;
     return `<div class="${cls(i)}${on ? " on" : tie ? " tie" : ""}" data-i="${i}" tabindex="-1" aria-label="step ${i + 1}">${on ? `<span class="nn">${nn(n + keyShift).replace(/-?\d/, "")}</span>` : ""}</div>`;
   }).join("");
 }
@@ -356,13 +436,13 @@ function toggle(t, i, r) {
     const notes = DROWS[+r][1], v = Array.isArray(st[i]) ? st[i].slice() : [];
     const has = v.some(n => notes.includes(n));
     let nv = has ? v.filter(n => !notes.includes(n)) : v.concat(+r === 4 ? [47] : notes);
-    st[i] = nv.length ? Object.assign(nv.slice(0, 4), st[i] && st[i].acc ? {acc: 1} : {}) : null;
-  } else if (st[i] != null && st[i] !== "tie") {
-    st[i] = null; for (let j = i + 1; j < 64 && st[j] === "tie"; j++) st[j] = null;
+    st[i] = nv.length ? Object.assign(nv.slice(0, 4), st[i] && st[i].acc ? {acc: 1} : {}, st[i] && st[i].roll ? {roll: st[i].roll} : {}) : null;
+  } else if (st[i] != null && !/^tie/.test(st[i])) {
+    st[i] = null; for (let j = i + 1; j < 64 && /^tie/.test(st[j]); j++) st[j] = null;
   } else {
     let src = orig[cur][t][i];
-    if (src == null || src === "tie") { for (let j = i - 1; j >= 0; j--) if (st[j] != null && st[j] !== "tie") { src = st[j]; break; } }
-    if (src == null || src === "tie") src = t === 1 ? 33 : 69;
+    if (src == null || /^tie/.test(src)) { for (let j = i - 1; j >= 0; j--) if (st[j] != null && !/^tie/.test(st[j])) { src = st[j]; break; } }
+    if (src == null || /^tie/.test(src)) src = t === 1 ? 33 : 69;
     st[i] = Array.isArray(src) ? src.slice() : src;
   }
   writeTrack(t); $("g" + t).innerHTML = gridHtml(t); lastPh = [];
@@ -463,7 +543,7 @@ function start() {
   node.onaudioprocess = ev => {
     const L = ev.outputBuffer.getChannelData(0), R = ev.outputBuffer.getChannelData(1);
     for (let off = 0; off < L.length; off += 128) {
-      if (playing) { const idx = w.w_seqidx(0); if (idx === 63 && lastIdx !== 63) onBoundary(); lastIdx = idx; }
+      if (playing) { const idx = w.w_seqidx(0), last = LENP() - 1; if (idx === last && lastIdx !== last) onBoundary(); lastIdx = idx; }
       const f = new Float32Array(w.memory.buffer, w.w_render(128), 256);
       for (let i = 0; i < 128; i++) { L[off + i] = f[2 * i]; R[off + i] = f[2 * i + 1]; scopeBuf[scopePos++ & 2047] = (f[2 * i] + f[2 * i + 1]) * 0.5; }
     }
@@ -474,7 +554,7 @@ function start() {
 function togglePlay() {
   start(); if (ctx && ctx.state !== "running") ctx.resume();
   playing = !playing;
-  if (playing) { if (songMode) { arrPos = I.SONG.arrange.indexOf(cur); if (arrPos < 0) arrPos = 0; } lastIdx = -1; w.w_transport(3); }
+  if (playing) { if (songMode) { arrPos = I.SCENE_SONG.indexOf(cur); if (arrPos < 0) arrPos = 0; } reps = 0; lastIdx = -1; w.w_transport(3); }
   else w.w_transport(2);
   $("play").textContent = playing ? "Stop" : "Play"; $("play").classList.toggle("on", playing);
 }
@@ -482,14 +562,12 @@ $("play").addEventListener("click", togglePlay);
 const KEYS = ["C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"];
 let keyShift = 0;
 function status2() { $("bpmv2").textContent = $("bpm").value + " BPM · " + KEYS[(9 + keyShift + 12) % 12] + " MINOR"; }
-$("theme").innerHTML = Object.keys(I.THEMES).map(t => `<option>${t}</option>`).join("");
-$("theme").addEventListener("change", () => setTheme($("theme").value));
-$("themenote").textContent = I.THEMES["Night Drive"].note + ". Key moves it all.";
 $("key").innerHTML = KEYS.map((k, i) => `<option value="${i}"${i === 9 ? " selected" : ""}>${k} minor</option>`).join("");
 $("key").addEventListener("change", () => {            /* the song is in A minor: move the melodic tracks, never the drums */
   let d = (+$("key").value - 9 + 12) % 12; if (d > 6) d -= 12; keyShift = d;
   I.setKey(d);                                         /* the sequenced notes move ... */
   for (let t = 1; t < 4; t++) { w.w_tset(t, ID.P_TRANS, d); writeTrack(t); applyLive(t); $("g" + t).innerHTML = gridHtml(t); }   /* ... and the keys play in the new key */
+  const kit = I.findSound(loaded[0]); if (kit && kit.KEYTUNE) I.tuneKick(w, 0, kit);                 /* an 808's kick follows the key */
   status2();
 });
 $("bpm").addEventListener("input", () => { const v = +$("bpm").value; w.w_gset(ID.G_BPM, v); $("bpmv").textContent = v; status2(); });
@@ -500,7 +578,7 @@ function frame() {
   if (cv.width !== Math.round(W * dpr)) { cv.width = Math.round(W * dpr); cv.height = Math.round(H * dpr); }
   g.setTransform(dpr, 0, 0, dpr, 0, 0); g.clearRect(0, 0, W, H);
   let s = scopePos - 1200; for (let i = 0; i < 700; i++) { const a = scopeBuf[(s + i - 1) & 2047], b = scopeBuf[(s + i) & 2047]; if (a < 0 && b >= 0) { s += i; break; } }
-  g.strokeStyle = "#ffad6b"; g.lineWidth = 2; g.shadowColor = "#ff8a3a"; g.shadowBlur = 8; g.beginPath();
+  g.strokeStyle = "#ff3b2a"; g.lineWidth = 2; g.shadowColor = "#ff3b2a"; g.shadowBlur = 0; g.beginPath();
   for (let i = 0; i < 480; i++) { const x = i / 479 * W, y = H / 2 - scopeBuf[(s + i) & 2047] * H * 0.9; i ? g.lineTo(x, y) : g.moveTo(x, y); }
   g.stroke(); g.shadowBlur = 0;
   const idx = w.w_seqidx(0);

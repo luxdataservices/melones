@@ -90,6 +90,7 @@ static void trk_note_on_raw(track_t *t, uint32_t note, uint32_t vel)
     if (note > 127u) return;
     uint32_t tr = (uint32_t)(t-trk);
     midi_insert_controls(tr);
+    duck_note(t, note);                                /* Melones: a muted kick still drives the duck (a ghost kick) */
     if (t->p[P_MUTE] || tr >= trk_n()) return;
     midi_insert.held[tr][note >> 5] |= 1u << (note & 31u);
     trk_note_on_engine(t, note, vel);

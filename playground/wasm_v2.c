@@ -109,3 +109,12 @@ EXPORT("w_duckenv") int32_t w_duckenv(void) { return duck.env; }
 EXPORT("w_clap") void w_clap(uint32_t wet, uint32_t feed, uint32_t swell, uint32_t every)
 { cfx.wet = (uint8_t)(wet & 127u); cfx.feed = (uint8_t)(feed & 127u); cfx.swell = (uint8_t)(swell & 127u);
   cfx.every = (uint8_t)(every == 2 || every == 4 || every == 8 ? every : 1); }
+EXPORT("w_duckmode") void w_duckmode(uint32_t beats, uint32_t every)
+{ duck.beats = (uint8_t)(beats ? 1 : 0); duck.every = (uint8_t)(every == 2 || every == 4 ? every : 1); }
+EXPORT("w_duckcount") uint32_t w_duckcount(void) { return duck.count; }
+EXPORT("w_duckcomp") void w_duckcomp(uint32_t on, uint32_t thresh) { duck.comp = (uint8_t)(on ? 1 : 0); duck.thresh = (uint8_t)(thresh & 127u); }
+EXPORT("w_duckfol") float w_duckfol(void) { return duck.fol; }
+EXPORT("w_chaos") void w_chaos(uint32_t amt, uint32_t style) { dfx.chaos = (uint8_t)(amt & 127u); dfx.style = (uint8_t)(style & 3u); }
+EXPORT("w_roll") void w_roll(uint32_t t, uint32_t i, uint32_t count, uint32_t span, uint32_t v0, uint32_t v1)
+{ if (t < NPART && i < NSTEP) { dfx.roll[t][i].count = (uint8_t)count; dfx.roll[t][i].span = (uint8_t)span; dfx.roll[t][i].v0 = (uint8_t)v0; dfx.roll[t][i].v1 = (uint8_t)v1; } }
+EXPORT("w_lp") void w_lp(uint32_t t, uint32_t cut, uint32_t res) { if (t < NPART) { plp.cut[t] = (uint8_t)(cut > 127 ? 127 : cut); plp.res[t] = (uint8_t)(res & 127u); } }

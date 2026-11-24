@@ -46,7 +46,7 @@ typedef struct {
 #define D_OFF(c) ((c) & 0xFEu)
 #define D_HOLD 0xFFu                           /* (loop: the last step holds) */
 /* in the 808's sound order (DRUM_SOUND_NAME; RIDE is its BELL, CRASH its cymbal) */
-static const dsk_drum_t DSK_DRUMS[16] = {
+static const dsk_drum_t DSK_DRUMS[32] = {   /* 0..15: KIT SID; 16..31: KIT SIMMONS (Melones) */
     /* KICK: a noise click, a pulse frame, then a triangle sweeping down */
     {{0, 72, 0, 30}, 8, 1, 4, D_HOLD, 1, 0x800, {{D_NOI, 1, 0xA000, 0}, {D_PUL, 1, DSK_HZ(170), 0},
         {D_TRI, 1, DSK_HZ(118), 0}, {D_TRI, 0, DSK_HZ(84), -DSK_HZ(7)}}},
@@ -76,6 +76,33 @@ static const dsk_drum_t DSK_DRUMS[16] = {
     /* CLAVE: a short high triangle */
     {{0, 40, 0, 30}, 1, 0, 1, D_HOLD, 0, 0x800, {{D_TRI, 0, DSK_HZ(2500), 0}}},
     /* MARACAS: noise with a slower attack */
+    {{24, 42, 0, 34}, 1, 0, 1, D_HOLD, 0, 0x800, {{D_NOI, 0, 0xFFFF, 0}}},
+    /* KIT SIMMONS (Melones): the SDS-V's sound on the chip. Its drums are a tone that dives (the "bend") with a
+     * noise burst on top; the toms are long triangle dives, unfiltered: the "pew". */
+    /* KICK: a click, then a triangle from 190 Hz diving to a sub over 0.4 s */
+    {{0, 86, 0, 44}, 12, 1, 3, D_HOLD, 1, 0x800, {{D_NOI, 1, 0x9000, 0}, {D_TRI, 1, DSK_HZ(190), 0},
+        {D_TRI, 0, DSK_HZ(150), -DSK_HZ(6)}}},
+    /* SNARE: noise and a 300 Hz tone frame by frame (the chip has one waveform a voice), then a long noise tail */
+    {{0, 82, 0, 64}, 10, 1, 5, D_HOLD, 1, 0x800, {{D_NOI, 1, 0xD000, 0}, {D_TRI, 1, DSK_HZ(300), 0},
+        {D_NOI, 1, 0xC400, 0}, {D_TRI, 1, DSK_HZ(250), 0}, {D_NOI, 0, 0xB400, -0x140}}},
+    /* TOM L, M, H: a stick click, then a long unfiltered triangle bending down */
+    {{0, 92, 0, 82}, 14, 0, 2, D_HOLD, 1, 0x800, {{D_NOI, 1, 0x5000, 0}, {D_TRI, 0, DSK_HZ(240), -DSK_HZ(5)}}},
+    {{0, 92, 0, 82}, 14, 0, 2, D_HOLD, 1, 0x800, {{D_NOI, 1, 0x6000, 0}, {D_TRI, 0, DSK_HZ(330), -DSK_HZ(7)}}},
+    {{0, 90, 0, 80}, 14, 0, 2, D_HOLD, 1, 0x800, {{D_NOI, 1, 0x7000, 0}, {D_TRI, 0, DSK_HZ(440), -DSK_HZ(9)}}},
+    /* RIM: a pulse blip into a bending triangle */
+    {{0, 50, 0, 36}, 2, 0, 2, D_HOLD, 0, 0x300, {{D_PUL, 1, DSK_HZ(1800), 0}, {D_TRI, 0, DSK_HZ(900), -DSK_HZ(30)}}},
+    /* CLAP: four bursts, wider apart, and a longer tail */
+    {{0, 72, 0, 56}, 12, 1, 5, D_HOLD, 0, 0x800, {{D_NOI, 1, 0x5000, 0}, {D_OFF(D_NOI), 1, 0, 0},
+        {D_NOI, 1, 0, 0}, {D_OFF(D_NOI), 1, 0, 0}, {D_NOI, 0, 0x4800, -0x40}}},
+    /* HAT C, HAT O, CYMBAL, BELL, CONGAS, CLAVE, MARACAS: as KIT SID */
+    {{0, 44, 0, 34}, 1, 0, 1, D_HOLD, 0, 0x800, {{D_NOI, 0, 0xF000, 0}}},
+    {{0, 80, 0, 74}, 14, 0, 1, D_HOLD, 0, 0x800, {{D_NOI, 0, 0xF000, 0}}},
+    {{0, 100, 0, 96}, 30, 0, 2, D_HOLD, 0, 0x800, {{D_NOI, 1, 0xFFFF, 0}, {D_NOI, 0, 0xD800, -0x40}}},
+    {{0, 66, 0, 56}, 6, 0, 2, 0, 0, 0x800, {{D_PUL, 1, DSK_HZ(810), 0}, {D_PUL, 1, DSK_HZ(540), 0}}},
+    {{0, 66, 0, 50}, 4, 0, 2, D_HOLD, 0, 0x800, {{D_TRI, 1, DSK_HZ(230), 0}, {D_TRI, 0, DSK_HZ(190), 0}}},
+    {{0, 64, 0, 50}, 4, 0, 2, D_HOLD, 0, 0x800, {{D_TRI, 1, DSK_HZ(330), 0}, {D_TRI, 0, DSK_HZ(280), 0}}},
+    {{0, 62, 0, 50}, 4, 0, 2, D_HOLD, 0, 0x800, {{D_TRI, 1, DSK_HZ(440), 0}, {D_TRI, 0, DSK_HZ(380), 0}}},
+    {{0, 40, 0, 30}, 1, 0, 1, D_HOLD, 0, 0x800, {{D_TRI, 0, DSK_HZ(2500), 0}}},
     {{24, 42, 0, 34}, 1, 0, 1, D_HOLD, 0, 0x800, {{D_NOI, 0, 0xFFFF, 0}}},
 };
 
@@ -233,9 +260,9 @@ static void dsk_hit(track_t *t, uint32_t note, uint32_t vel)
                 best = k;
     dsk_ch_t *c = &K->ch[best];
     dsk_next_t *h = &c->next;
-    const dsk_drum_t *d = &DSK_DRUMS[sound];
+    const dsk_drum_t *d = &DSK_DRUMS[sound + (t->p[P_E0] == DK_SIMMONS ? 16u : 0u)];
     int32_t dec = (t->p[P_E3] - 64) / 2 + pc[1] / 2, snap = clamp(t->p[P_E4] + pc[2], 0, 191);
-    h->sound = (uint8_t)sound;
+    h->sound = (uint8_t)(sound + (t->p[P_E0] == DK_SIMMONS ? 16u : 0u));   /* (its program: KIT SID's or SIMMONS') */
     h->tune = tune ? (int32_t)dr_pow2(tune) : 65536;   /* (untuned: the program's registers exactly) */
     h->gain = dr8_level(vel, t->p[P_E5]);
     h->level = (uint8_t)(127 - pc[3]);

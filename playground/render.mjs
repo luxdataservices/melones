@@ -6,10 +6,11 @@ const solo = args.solo !== undefined ? +args.solo : -1, noduck = !!args.noduck, 
 const w = new WebAssembly.Instance(mod, {}).exports;
 const chosen = {drums: "SID DIGI KIT", bass: "BODY HEAT", arp: "TWINKLE", lead: "CYBER LEAD", pad: "VELVET STRINGS", ...JSON.parse(args.chosen || "{}")};
 if (args.theme && I.THEMES[args.theme.replace(/_/g, " ")].sounds) Object.assign(chosen, I.THEMES[args.theme.replace(/_/g, " ")].sounds);
-if (args.claps) I.setClaps(args.claps.replace(/_/g, ' ')); if (args.beat) I.setBeat(args.beat); if (args.theme) I.setTheme(args.theme.replace(/_/g, ' ')); if (args.key) I.setKey(+args.key); I.setupSong(w, chosen); if (args.key) for (let t = 1; t < 4; t++) w.w_tset(t, I.ID.P_TRANS, +args.key); if (args.bpm) w.w_gset(I.ID.G_BPM, +args.bpm); if (noduck) for (let t = 0; t < 4; t++) w.w_duck(t, 0); if (noclap) w.w_clap(0, 0, 0, 1); if (args.every) w.w_clap(I.SONG.clap[0], I.SONG.clap[1], I.SONG.clap[2], +args.every);
+I.setLen(+args.len || 64); if (args.claps) I.setClaps(args.claps.replace(/_/g, ' ')); if (args.beat) I.setBeat(args.beat); if (args.theme) I.setTheme(args.theme.replace(/_/g, ' ')); if (args.key) I.setKey(+args.key); I.setupSong(w, chosen); if (args.key) for (let t = 1; t < 4; t++) w.w_tset(t, I.ID.P_TRANS, +args.key); if (args.bpm) w.w_gset(I.ID.G_BPM, +args.bpm); if (noduck) for (let t = 0; t < 4; t++) w.w_duck(t, 0); if (noclap) w.w_clap(0, 0, 0, 1); if (args.every) w.w_clap(I.SONG.clap[0], I.SONG.clap[1], I.SONG.clap[2], +args.every);
 const kill = () => { if (args.nochorus) w.w_gset(I.ID.G_MFXTYPE, 0);
   for (let t = 0; t < 4; t++) { if (args.noglide) w.w_tset(t, I.ID.P_GLIDE, 0); if (args.novib) { w.w_tset(t, I.ID.P_LD_PIT, 0); w.w_tset(t, I.ID.P_LD_SHP, 0); } } };
 kill();
+if (args.warp) { const ID = I.ID; w.w_tset(1, ID.P_LD_FLT, +args.warp); w.w_tset(1, ID.P_LSYNC, +(args.wrate || 3)); w.w_tset(1, ID.P_LTRIG, 1); w.w_tset(1, ID.P_LWAVE, 1); }
 const arr = args.arrange ? args.arrange.split(',').map(Number) : I.SONG.arrange;
 let si = 0; I.loadSection(w, I.SONG.sections[arr[0]], chosen);
 if (solo >= 0) for (let t = 0; t < 4; t++) if (t !== solo) w.w_tset(t, I.ID.P_MUTE, 1);
@@ -17,8 +18,8 @@ w.w_transport(1);
 const FS = 44100, total = Math.round(arr.length * 16 * 60 / (+args.bpm || I.SONG.bpm) * FS) + FS * 2;
 const pcm = new Int16Array(total * 2); let last = 0, vmax = 0, peak = 0, clip = 0, ss = 0;
 for (let f = 0; f + 128 <= total; f += 128) {
-  const idx = w.w_seqidx(0);
-  if (idx === 63 && last !== 63) { si++; if (si < arr.length) { I.loadSection(w, I.SONG.sections[arr[si]], chosen); kill(); } else w.w_transport(2);
+  const idx = w.w_seqidx(0), L = (+args.len || 64) - 1;
+  if (idx === L && last !== L) { si++; if (si < arr.length) { I.loadSection(w, I.SONG.sections[arr[si]], chosen); kill(); } else w.w_transport(2);
     if (solo >= 0) for (let t = 0; t < 4; t++) w.w_tset(t, I.ID.P_MUTE, t !== solo ? 1 : 0); }
   last = idx;
   const p = w.w_render(128), a = new Float32Array(w.memory.buffer, p, 256);

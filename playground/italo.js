@@ -13,6 +13,8 @@ const SID = 3, DRUM = 10;
  * SEND: to the master [chorus, reverb, room]. */
 const SOUNDS = {
   bass: [
+    {name: "808 ROLL", note: "Long sub with a pitch punch; slides glide between notes", eng: SID, pre: 4,
+     E: [1, 0, 0, 64, 127, 0, 7, 56], ATK: 0, DEC: 98, SUS: 96, REL: 82, ED_PIT: 10, VOICE: 2, GLIDE: 34, LEVEL: 118},
     {name: "1986 BASS", note: "Held saw bass, slow filter", eng: SID, pre: 6,
      E: [0, 1, 1, 64, 30, 8, 0, 30], ATK: 4, DEC: 90, SUS: 100, REL: 50, ED_FLT: 16, VOICE: 2, LEVEL: 108},
     {name: "BODY HEAT", note: "Pulse octave bass, plucky filter", eng: SID, pre: 3,
@@ -65,15 +67,22 @@ const SOUNDS = {
   ],
   drums: [
     {name: "SID DIGI KIT", note: "Kick and snare as C64 digis", eng: DRUM, pre: 3, LEVEL: 108, SEND: [0, 0, 24]},
+    {name: "SID CRUNCH", note: "Everything up, chip kick: tuned down, longest decay, full snap, screaming filter", eng: DRUM, pre: 2,
+     E: [6, 44, 127, 127, 127, 127, 0, 127], LEVEL: 108, SEND: [0, 0, 30]},
+    {name: "SIMMONS KIT", note: "SDS-V on the SID: diving toms, tone-and-noise snare", eng: DRUM, pre: 6, LEVEL: 110, SEND: [0, 24, 30]},
+    {name: "SIMMONS BIG", note: "Simmons, tuned down, longer and roomier", eng: DRUM, pre: 6,
+     E: [9, 56, 112, 104, 100, 124, 0, 40], LEVEL: 108, SEND: [0, 44, 34]},
+    {name: "808 BOOM", note: "Round kick with a long boom, driven; tuned to the key", eng: DRUM, pre: 0, KEYTUNE: 29.30,
+     E: [4, 54, 76, 114, 96, 122, 1, 84], LEVEL: 104, SEND: [0, 0, 24]},
     {name: "SID KIT", note: "Every drum on the chip", eng: DRUM, pre: 2, LEVEL: 112, SEND: [0, 0, 24]},
-    {name: "808 KIT", note: "Melodee's 808", eng: DRUM, pre: 0, LEVEL: 104, SEND: [0, 0, 20]}
+    {name: "808 KIT", note: "Melodee's 808, kick tuned to the key", eng: DRUM, pre: 0, KEYTUNE: 31.16, LEVEL: 104, SEND: [0, 0, 20]}
   ]
 };
 
 /* THEMES: a progression (a bass root and a chord per bar, in A minor; KEY transposes), the main bass figure and
  * a lead melody written to it. The arps and the pad follow the chords, so every part agrees whatever the key. */
 const THEMES = {
-  "Night Drive": {note: "Am F G Em: gallop bass, the original hook", bass: "gallop",
+  "Night Drive": {note: "Am F G Em at 124: driving 16th octave bass, rising 16th arps, 16th hats, the hook on top", bass: "octave", arp: "arp", hats16: 1, bpm: 124,
     ch: [[45, [57, 60, 64]], [41, [53, 57, 60]], [43, [55, 59, 62]], [40, [52, 55, 59]]],
     mel: [[0, 76, 3], [3, 76, 2], [6, 74, 1], [7, 72, 2], [9, 69, 3], [12, 72, 2], [14, 74, 2],
       [16, 72, 3], [19, 72, 2], [22, 69, 1], [23, 72, 2], [25, 77, 4], [29, 76, 3],
@@ -99,6 +108,17 @@ const THEMES = {
       [16, 69, 2], [18, 64, 2], [20, 65, 2], [22, 69, 1], [23, 72, 1], [24, 69, 1], [25, 72, 1], [26, 69, 1], [27, 76, 1], [28, 65, 2], [30, 64, 2],
       [32, 69, 2], [34, 64, 2], [36, 65, 2], [38, 64, 2], [40, 69, 2], [42, 64, 2], [44, 65, 2], [46, 64, 2],
       [48, 69, 2], [50, 67, 2], [52, 65, 2], [54, 64, 2], [56, 69, 2], [58, 64, 2], [60, 65, 2], [62, 64, 2]]},
+  "Trap": {note: "Am Am F G at 140: a rolling 808 that slides between notes, the Trap beat, a dark bell hook",
+    bass: "held", bpm: 140, beat: "Trap", sounds: {bass: "808 ROLL", arp: "CRYSTAL ARP"},
+    ch: [[45, [57, 60, 64]], [45, [57, 60, 64]], [41, [53, 57, 60]], [43, [55, 59, 62]]],
+    bassSteps: [[0, 33, 6, 1], [6, 36, 4], [10, 31, 4, 1], [14, 33, 2],
+      [16, 33, 6], [22, 40, 2, 1], [24, 38, 2], [26, 36, 4, 1], [30, 33, 2],
+      [32, 29, 6, 1], [38, 33, 4], [42, 36, 4, 1], [46, 29, 2],
+      [48, 31, 6], [54, 35, 2, 1], [56, 38, 4], [60, 28, 4, 1]],
+    mel: [[0, 76, 3], [3, 74, 1], [4, 72, 4], [10, 69, 2], [12, 72, 4],
+      [16, 76, 3], [19, 77, 1], [20, 76, 4], [26, 74, 2], [28, 72, 4],
+      [32, 77, 3], [35, 76, 1], [36, 72, 4], [42, 69, 2], [44, 72, 4],
+      [48, 74, 3], [51, 72, 1], [52, 71, 4], [58, 67, 2], [60, 71, 4]]},
   "Cosmic": {note: "Am Dm G C: long, soaring notes, gallop bass", bass: "gallop",
     ch: [[45, [57, 60, 64]], [50, [53, 57, 62]], [43, [55, 59, 62]], [48, [55, 60, 64]]],
     mel: [[0, 76, 6], [6, 74, 2], [8, 72, 4], [12, 71, 2], [14, 72, 2],
@@ -150,7 +170,7 @@ const CLAPS = {
 };
 let clapStyle = "2 and 4", beatStyle = "Italo";
 function setClaps(name) { if (CLAPS[name]) clapStyle = name; }
-function setBeat(name) { if (BEATS[name]) beatStyle = name; }
+function setBeat(name) { if (name in BEATS) beatStyle = name; }
 /* "Spacer": transcribed from a recreation of Charlie's Spacer Woman (1983) loop, 123.75 BPM, two bars:
  * electro kick on 1, 8, 9, 11; snare + clap on 2 and 4; 16th hats accented on steps 3 and 6;
  * bar 2 ends bap-bap-bap: three 8th-note claps on steps 11, 13 and 15, the hats thinning to 8ths under them */
@@ -162,7 +182,7 @@ function spacerBar(bar2) {
     if ([0, 7, 8, 10].includes(b)) n.push(K);
     if (b === 4 || b === 12) n.push(SN, CL);
     else if (bar2 && (b === 10 || b === 14)) n.push(CL);
-    if (!bar2 || b < 6 || (b % 2 === 0 && b < 15)) n.push(HC);   /* bar 2 thins to 8ths, then the baps stand alone */
+    n.push(HC);                                                   /* hats on every 16th */
     s.push(b === 2 || b === 5 || (bar2 && (b === 10 || b === 12 || b === 14)) ? acc(n) : n);
   }
   return s;
@@ -175,15 +195,36 @@ function bar1986() {
   for (let b = 1; b <= 16; b++) { const n = (P[b] || []).slice(); s.push(b === 5 || b === 13 ? acc(n) : n); }
   return s;
 }
-const BEATS = {Italo: null, Spacer: [spacerBar(0), spacerBar(1)], "1986": [bar1986()]};
+/* "Trap": half-time (snare + clap on beat 3), kick 1, the & of 2, the & of 3; 8th hats with rolls:
+ * roll = [hits, over steps, first velocity, last velocity] (drumfx.c plays the hits between the steps) */
+function roll(a, r) { a.roll = r; return a; }
+function trapBar() {
+  const s = [];
+  for (let b = 1; b <= 16; b++) {
+    const n = [];
+    if (b === 1 || b === 7 || b === 11) n.push(K);
+    if (b === 9) n.push(SN, CL);
+    if (b === 15) n.push(HO); else if (b % 2 === 1 || [4, 8, 13, 16].includes(b)) n.push(HC);
+    let v = n;
+    if (b === 3) v = roll(n, [2, 1, 96, 112]);           /* a 32nd double */
+    if (b === 6) v = roll([HC], [3, 1, 70, 104]);        /* a quick triple */
+    if (b === 8) v = roll(n, [4, 2, 50, 118]);           /* 32nds fading in */
+    if (b === 13) v = roll(n, [6, 2, 118, 40]);          /* 32nd triplets fading out */
+    if (b === 16) v = roll([HC, SN], [4, 1, 40, 100]);   /* a snare and hat swell into the bar */
+    s.push(b === 9 ? acc(v) : v);
+  }
+  return s;
+}
+const BEATS = {Italo: null, Spacer: [spacerBar(0), spacerBar(1)], "1986": [bar1986()], Trap: [trapBar()]};
 function drumPattern(style) {          /* kick on every beat, claps (CLAPS), 8th hats, open hat off the beat */
   const s = [];
   if (BEATS[beatStyle]) {               /* a transcribed beat: its bars over and over (the Intro drops its kick) */
     const B = BEATS[beatStyle];
-    for (let i = 0; i < 64; i++) {
-      const v = B[Math.floor(i / 16) % B.length][i % 16];
+    for (let i = 0; i < 64; i++) {           /* (one bar: a two-bar beat plays its second, the one with the fill) */
+      const v = B[LEN === 16 ? B.length - 1 : Math.floor(i / 16) % B.length][i % 16];
       const n = style === "hats" ? v.filter(x => x !== K) : v.slice();
       if (v.acc) n.acc = 1;
+      if (v.roll) n.roll = v.roll;
       s.push(n);
     }
     return s;
@@ -193,7 +234,7 @@ function drumPattern(style) {          /* kick on every beat, claps (CLAPS), 8th
     if (style !== "hats" && b % 4 === 0) n.push(K);
     const cl = CLAPS[clapStyle][Math.floor(i / 16) % 2];
     if (cl.includes(b)) n.push(CL); if (b === 4 || b === 12) n.push(SN);
-    if (b % 4 === 2) n.push(HO); else if (style === "busy" || b % 4 === 0) n.push(HC);
+    if (b % 4 === 2) n.push(HO); else if (style === "busy" || THEMES[themeName].hats16 || b % 4 === 0) n.push(HC);
     if (style === "fill" && i >= 56) { n.length = 0; if (i % 4 === 0) n.push(K); n.push([TH, TH, TM, TM, TL, TL, TL, TL][i - 56]); }
     s.push(n.slice(0, 4));
   }
@@ -201,12 +242,15 @@ function drumPattern(style) {          /* kick on every beat, claps (CLAPS), 8th
 }
 /* sections: which tracks play what (null = silent) */
 const SONG = {
-  bpm: 116,
+  bpm: 124,
   tracks: ["Drums", "Bass", "Arp", "Lead"],
   defaults: ["SID DIGI KIT", "BODY HEAT", "TWINKLE", "CYBER LEAD"],
-  duck: [0, 52, 30, 38],        /* DUCK per track: the kick pumps bass, arp and lead/pad, gently */
+  duck: [0, 18, 64, 88],        /* DUCK per track: the kick pumps the pad and lead hardest, the arp less, the bass barely */
   duckRel: 76,
-  clap: [80, 100, 90, 4],       /* INFINITY CLAP: wet, feed (how long the wash hangs), swell (the reverse in), every Nth clap */                  /* DUCK REL: about 250 ms, the kick's beat at 118 BPM */
+  duckMode: [1, 1],             /* DUCK ON: 1 = kicks on the beat only; EVERY: 1, 2 or 4 */
+  duckComp: [1, 64],            /* DUCK MODE 1 = sidechain compressor keyed by the kick's audio; THRESH 64 = -24 dB */
+  chaos: [0, 0],                /* CLAP CHAOS: amount 0-127, style 0 ALL 1 FLAM 2 TRIPLET 3 RATCHET */
+  clap: [45, 80, 64, 4],       /* INFINITY CLAP: wet, feed (how long the wash hangs), swell (the reverse in), every Nth clap */                  /* DUCK REL: about 250 ms, the kick's beat at 118 BPM */
   arrange: [0, 1, 2, 3, 4, 2, 3],  /* sections in order, 4 bars each */
   sections: [
     {name: "Intro", drums: "beat", bass: "gallop", arp: null, lead: "strings"},
@@ -228,6 +272,8 @@ function applySound(w, t, s) {
   for (const k of ["ATK", "DEC", "SUS", "REL", "ED_FLT", "ED_PIT", "ED_SHP", "VOICE", "GLIDE", "LRATE", "LWAVE", "LFADE", "LD_PIT", "LD_SHP", "LD_FLT", "LEVEL", "PAN"])
     if (s[k] !== undefined) w.w_tset(t, ID["P_" + k], s[k]);
   if (s.LD_PIT || s.LD_SHP || s.LD_FLT) { w.w_tset(t, ID.P_LSYNC, 0); }
+  if (s.eng === DRUM) w.w_tset(t, ID.P_LN2, s.CLAPLVL || 92);   /* the clap lane a few dB down (127 = the kit's own) */
+  if (s.KEYTUNE) tuneKick(w, t, s);
   const e = s.ECHO || [0, 1, 64];
   w.w_tset(t, ID.P_FXTYPE, s.ECHO ? ID.FX_MIDIDELAY : 0);
   w.w_tset(t, ID.P_FXMIX, e[0]); w.w_tset(t, ID.P_FXRATE, e[1]); w.w_tset(t, ID.P_FXCHAR, e[2]);
@@ -242,18 +288,29 @@ function setupMaster(w) {
 }
 /* one track's 64 steps: notes[i] is a note, an array of notes, or null; len[i] ties it over the next steps */
 let KEY = 0;                          /* semitones from A minor: the sequenced notes of the melodic tracks move */
+/* an 808 kit's kick on the key's root: its body (KEYTUNE, measured: MIDI 31.16 for the 808 at TUNE 64) moved by
+ * TUNE (3/16 semitone a step) to the root between B0 and A1 (22..33) */
+function tuneKick(w, t, s) {
+  const root = (9 + KEY + 120) % 12, target = (24 + root > 33 ? 12 + root : 24 + root);
+  const base = s.KEYTUNE + ((s.E ? s.E[1] : 64) - 64) * 3 / 16;     /* the kit's own body with its own TUNE */
+  const tune = Math.round((s.E ? s.E[1] : 64) + (target - base) * 16 / 3);
+  w.w_tset(t, ID.P_E0 + 1, Math.max(0, Math.min(127, tune)));
+}
+let LEN = 16;                         /* pattern length in steps: 16 (one bar of 4/4) or 64 (four bars) */
+function setLen(n) { LEN = n === 64 ? 64 : 16; }
 function setKey(k) { KEY = k | 0; }
 function writeSteps(w, t, notes, gate) {
   const tr = t ? KEY : 0;               /* (the drums never move: their notes are the kit's drums) */
-  w.w_tset(t, ID.P_SLEN, 64);
+  w.w_tset(t, ID.P_SLEN, LEN);
   w.w_tset(t, ID.P_SGATE, gate || 64);
   for (let i = 0; i < 64; i++) {
     const v = notes[i];
-    if (v === "tie") { w.w_step(t, i, 0, 0, ID.ST_TIE, 0, 0); continue; }
+    if (v === "tie" || v === "tieS") { w.w_step(t, i, 0, 0, ID.ST_TIE, v === "tieS" ? 2 : 0, 0); continue; }   /* tieS: slide into the next */
     const a = v == null ? [] : Array.isArray(v) ? v : [v];
     let p = 0; a.forEach((n, k) => { p |= Math.max(0, Math.min(127, n + tr)) << (8 * k); });
     const ac = v && v.acc !== undefined ? v.acc : i % 16 === 0;
-    w.w_step(t, i, a.length, p >>> 0, a.length ? ID.ST_NOTE : ID.ST_REST, a.length && ac ? ID.SF_ACCENT : 0, a.length ? (ac ? 112 : 96) : 0);
+    if (t === 0 && w.w_roll) { const r = v && v.roll; w.w_roll(0, i, r ? r[0] : 0, r ? r[1] : 0, r ? r[2] : 0, r ? r[3] : 0); }
+    w.w_step(t, i, a.length, p >>> 0, a.length ? ID.ST_NOTE : ID.ST_REST, (a.length && ac ? ID.SF_ACCENT : 0) | (v && v.slide ? 2 : 0), a.length ? (ac ? 112 : 96) : 0);
   }
 }
 function partSteps(kind, part) {
@@ -261,11 +318,14 @@ function partSteps(kind, part) {
   if (kind === "drums") return drumPattern(part);
   if (kind === "bass" && part === "gallop" && THEMES[themeName].bassSteps) {   /* a transcribed bassline: held notes */
     const s = new Array(64).fill(null);
-    for (const [st, n, len] of THEMES[themeName].bassSteps) { s[st] = n; for (let i = 1; i < len; i++) s[st + i] = "tie"; }
+    for (const [st, n, len, sl] of THEMES[themeName].bassSteps) {
+      s[st] = sl && len === 1 ? Object.assign([n], {slide: 1}) : n;
+      for (let i = 1; i < len; i++) s[st + i] = sl && i === len - 1 ? "tieS" : "tie";
+    }
     return s;
   }
   if (kind === "bass") return bassPattern(part === "gallop" ? THEMES[themeName].bass : part);
-  if (kind === "arp") return arpPattern(part);
+  if (kind === "arp") return arpPattern(part === "twinkle" && THEMES[themeName].arp ? THEMES[themeName].arp : part);
   if (part === "strings") {
     const s = [];
     for (const [, c] of CH) { s.push(c); for (let i = 1; i < 15; i++) s.push("tie"); s.push(null); }
@@ -290,8 +350,62 @@ function setupSong(w, chosen) {
   w.w_init(); setupMaster(w); w.w_gset(ID.G_BPM, SONG.bpm);
   CUR.length = 0;
   ["drums", "bass", "arp", "lead"].forEach((k, t) => { const n = chosen[k]; applySound(w, t, findSound(n)); CUR[t] = n; });
-  SONG.duck.forEach((a, t) => w.w_duck(t, a)); w.w_duckrel(SONG.duckRel);
-  w.w_clap(SONG.clap[0], SONG.clap[1], SONG.clap[2], SONG.clap[3]);
+  SONG.duck.forEach((a, t) => w.w_duck(t, a)); w.w_duckrel(SONG.duckRel); w.w_duckmode(SONG.duckMode[0], SONG.duckMode[1]); w.w_duckcomp(SONG.duckComp[0], SONG.duckComp[1]);
+  w.w_clap(SONG.clap[0], SONG.clap[1], SONG.clap[2], SONG.clap[3]); w.w_chaos(SONG.chaos[0], SONG.chaos[1]);
 }
-const ITALO = {ID, SOUNDS, SONG, CLAPS, BEATS, THEMES, setClaps, setBeat, setTheme, setKey, findSound, applySound, setupSong, loadSection, writeSteps, partSteps};
+/* ---------------------------------------------------------------- LANE PRESETS (one bar, A minor) ---
+ * A preset is a sound and a one-bar pattern for one lane. Everything is written over A minor, so any drums, bass,
+ * arp and lead go together; KEY moves the melodic lanes. Steps: a note, an array (chord / drums), "tie", or null. */
+const A = [57, 60, 64];                     /* the A minor triad around A3 */
+const bar = (list, n = 16) => { const s = new Array(n).fill(null); for (const [st, v, len, sl] of list) { s[st] = sl && len === 1 ? Object.assign([v].flat(), {slide: 1}) : v; for (let i = 1; i < (len || 1); i++) s[st + i] = sl && i === len - 1 ? "tieS" : "tie"; } return s; };
+function italoBar() {                       /* four on the floor, snare + clap on 2 and 4, 16th hats, open hats off the beat */
+  const s = [];
+  for (let b = 0; b < 16; b++) { const n = []; if (b % 4 === 0) n.push(K); if (b === 4 || b === 12) n.push(SN, CL); n.push(b % 4 === 2 ? HO : HC); s.push(b % 4 === 0 ? acc(n) : n); }
+  return s;
+}
+function miamiBar() {                       /* Miami bass: the 808's boom on 1, the a of 2 and the & of 3; claps on 2 and 4; 16th hats; a cowbell */
+  const s = [];
+  for (let b = 0; b < 16; b++) {
+    const n = []; if ([0, 7, 10].includes(b)) n.push(K); if (b === 4 || b === 12) n.push(CL, SN);
+    if (b === 3 || b === 11) n.push(56); n.push(b === 14 ? HO : HC);
+    s.push(b === 4 || b === 12 ? acc(n) : n);
+  }
+  return s;
+}
+const LANE = {
+  drums: [
+    {name: "Italo 4/4", sound: "SID DIGI KIT", steps: () => italoBar()},
+    {name: "Spacer", sound: "SID DIGI KIT", steps: () => spacerBar(1), bpm: 124},
+    {name: "1986", sound: "SIMMONS KIT", steps: () => bar1986(), bpm: 125},
+    {name: "Miami Boom", sound: "808 BOOM", steps: () => miamiBar(), bpm: 126},
+    {name: "Trap", sound: "808 KIT", steps: () => trapBar(), bpm: 140}
+  ],
+  bass: [
+    {name: "Octave drive", sound: "BODY HEAT", steps: () => Array.from({length: 16}, (_, i) => i % 2 ? 45 : 33)},
+    {name: "Gallop", sound: "BODY HEAT", steps: () => Array.from({length: 16}, (_, i) => i % 4 === 1 ? null : i % 4 === 3 ? 45 : 33)},
+    {name: "Electro", sound: "MONEY BASS", steps: () => [33, null, null, 33, null, null, 45, 33, 33, null, 40, 45, null, null, 45, null]},
+    {name: "1986 hold", sound: "1986 BASS", steps: () => bar([[0, 33, 12], [12, 31, 4]])},
+    {name: "Miami 808", sound: "808 ROLL", steps: () => bar([[0, 33, 6, 1], [6, 36, 4], [10, 31, 4, 1], [14, 33, 2]])}
+  ],
+  arp: [
+    {name: "Twinkle", sound: "TWINKLE", steps: () => { const t = [88, 84, 81, 76, 72, 69, null, null]; return Array.from({length: 16}, (_, i) => t[i % 8]); }},
+    {name: "Rising 16ths", sound: "LASER ARP", steps: () => { const t = [69, 72, 76, 81, 84], o = [0, 1, 2, 3, 4, 3, 2, 1]; return Array.from({length: 16}, (_, i) => t[o[i % 8]]); }},
+    {name: "Crystal", sound: "CRYSTAL ARP", steps: () => [81, null, 76, 72, null, 69, 72, null, 76, null, 81, 84, null, 76, null, null]},
+    {name: "Off", sound: "TWINKLE", steps: () => new Array(16).fill(null)}
+  ],
+  lead: [
+    {name: "Goth strings", sound: "VELVET STRINGS", gate: 120, steps: () => bar([[0, A, 15]])},
+    {name: "Night hook", sound: "CYBER LEAD", steps: () => bar([[0, 76, 3], [3, 76, 2], [6, 74, 1], [7, 72, 2], [9, 69, 3], [12, 72, 2], [14, 74, 2]])},
+    {name: "Robot", sound: "XALAN SYNC", steps: () => bar([[0, 76, 1], [2, 76, 1], [4, 74, 1], [5, 76, 2], [8, 69, 2], [11, 72, 1], [12, 72, 2], [14, 76, 2]])},
+    {name: "1986 riff", sound: "1986 LEAD", steps: () => bar([[0, 69, 2], [2, 67, 2], [4, 65, 2], [6, 64, 2], [8, 69, 2], [10, 64, 2], [12, 65, 2], [14, 74, 1], [15, 71, 1]])},
+    {name: "Dark bells", sound: "STOP PULSE", steps: () => bar([[0, 76, 3], [3, 74, 1], [4, 72, 4], [10, 69, 2], [12, 72, 4]])},
+    {name: "Brass stabs", sound: "HI-NRG BRASS", steps: () => bar([[2, A, 1], [6, A, 1], [10, A, 1], [14, A, 1]])}
+  ]
+};
+/* scenes: which lanes play */
+const SCENES = [
+  {name: "Intro", on: [1, 1, 0, 0]}, {name: "Build", on: [1, 1, 1, 0]}, {name: "Full", on: [1, 1, 1, 1]}, {name: "Break", on: [0, 1, 1, 1]}
+];
+const SCENE_SONG = [0, 1, 2, 2, 3, 2];     /* Song: each scene 4 bars */
+const ITALO = {LANE, SCENES, SCENE_SONG, ID, SOUNDS, SONG, CLAPS, BEATS, THEMES, setClaps, setBeat, setTheme, setKey, setLen, tuneKick, findSound, applySound, setupSong, loadSection, writeSteps, partSteps};
 if (typeof module !== "undefined") module.exports = ITALO;
