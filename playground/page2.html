@@ -120,6 +120,32 @@ input[type=text]{font:16px Rubik,system-ui,sans-serif;min-height:44px;border-rad
 .lane>.kpages{grid-column:1/-1;margin-top:2px}.lane{align-items:start}
 #fx,#snd{display:block}
 .tag{margin:-6px 0 12px;font:italic 600 16px "Barlow Condensed",sans-serif;letter-spacing:.04em;color:#7a2a1c}
+.phonebar{display:none}
+@media(max-width:820px){
+  body{padding:6px 8px 0}.band{padding:0}.lede,.below,.band>.note,.ctl>.note,.dev>.top>.screen{display:none!important}
+  h1{display:inline-block;font-size:24px;margin:0 8px 0 0;vertical-align:middle}.tag{display:inline-block;margin:0;font-size:12px;vertical-align:middle}
+  .dev{padding:6px;margin-top:4px}.top{gap:6px;margin:0}.ctl{gap:6px}.ctl .row{gap:6px}
+  .ctl .row label.bpm:has(#bpm),.ctl #keyrow,.ctl .row:has(#len),.dev>.panel,.dev>#fx{display:none}
+  .band>h1+*:not(.tag){display:none}h1::after{display:none!important}.dev{padding:4px!important}.tabs{margin-top:4px!important}.kbd{height:88px!important;margin-top:4px!important}.lane .gwrap{margin:0}
+  #play{min-height:40px;padding:0 16px;flex:0 0 auto}
+  .phonebar{display:flex;gap:4px;flex:1}.pb{flex:1;min-height:40px;border:0;border-radius:4px;background:#3a3733;color:#cfc7bb;font:600 13px "Barlow Condensed",sans-serif;padding:0 4px}.pb.on{background:#d9822b;color:#1b1a18}
+  .dice{min-height:40px;min-width:44px;font-size:20px}.dice.evo{min-width:64px;font-size:12px}
+  .chips{gap:4px}.chip{min-width:0;flex:1;padding:2px 4px}.chip b{font-size:11px}.chip span{font-size:13px}
+  .tabs{margin-top:6px}.tab{padding:6px 2px 4px;font-size:13px}
+  .lane{padding:6px;gap:6px}.lane .lh{grid-template-columns:1fr 1fr auto auto!important;gap:4px}.lane .lh .t{display:none}
+  .lane .lh .b:last-child{display:none}.lane .lh .b{display:contents}.lane .lh .b button{min-height:36px;padding:0 8px;font-size:13px}
+  .lane .lh select{min-height:36px;font-size:14px}
+  .pages{margin-bottom:4px}.pages .pg{min-height:30px}
+  .grid:not(.roll) .cell{height:20px}.grid.roll .cell{height:11px}.grid.roll .rl.pr{line-height:11px;font-size:7px}
+  .lane>.kpages{display:flex;overflow-x:auto;scroll-snap-type:x mandatory;gap:8px;padding-bottom:2px}
+  .lane>.kpages .kpage{flex:0 0 100%;scroll-snap-align:start;padding:4px 6px}.kpk .k .knob{width:38px;height:38px}
+  .kbd{height:96px;margin-top:6px}
+  #sheet{position:fixed;left:0;right:0;bottom:0;max-height:72vh;overflow:auto;z-index:50;background:#22201d;border-top:4px solid #d9822b;border-radius:10px 10px 0 0;padding:8px 10px 18px;box-shadow:0 -8px 24px #0009}
+  #sheet .shh{display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;font:600 18px "Barlow Condensed",sans-serif;color:var(--cream);letter-spacing:.06em;text-transform:uppercase}
+  #sheet #shx{min-width:44px;min-height:40px;border:0;border-radius:4px;background:#3a3733;color:var(--cream);font-size:18px}
+  #sheet .row,#sheet label.bpm{display:flex!important;flex-wrap:wrap;gap:8px;margin:6px 0}#sheet .screen{display:flex!important;margin-top:8px}
+  #sheet .fx,#sheet .panel{margin:0}
+}
 </style>
 <style>
 /* CRUMAR: a crusty late-70s Italian panel. Worn beige backdrop; black matte panel between walnut end cheeks;
@@ -188,8 +214,9 @@ pre{background:#ece2c8;color:#231c14;box-shadow:inset 0 0 0 1px #b9aa88;border-r
       <div class="srow"><span id="bpmv2">124 BPM · A MINOR</span><span id="keysfor">KEYS: LEAD</span></div>
     </div>
     <div class="ctl">
-      <div class="row"><button id="play">Play</button><label class="bpm">Tempo <input id="bpm" type="range" min="60" max="160" value="124"><span id="bpmv">124</span></label></div>
-      <div class="row"><label class="bpm" style="flex:1 1 auto">Vibe <select id="vibe" aria-label="Vibe"></select></label><button id="dice" class="dice" aria-label="Randomize everything" title="Randomize">🎲</button><button id="evolve" class="dice evo" aria-pressed="false" title="Evolve: the dice nudges the track every 4 bars">EVOLVE</button><label class="bpm" style="flex:0 1 auto">Key <select id="key" aria-label="Root note"></select></label><label class="bpm" style="flex:0 1 auto">Scale <select id="scale" aria-label="Scale"></select></label><button id="link" class="dice evo on" aria-pressed="true" title="Link: a progression brings its scale, a scale its progression">🔗 LINK</button><label class="bpm" style="flex:0 1 auto">Progression <select id="prog" aria-label="Chord progression"></select></label></div>
+      <div class="row"><button id="play">Play</button><span class="phonebar"><button class="pb" data-sheet="song" aria-label="Song settings">⚙ Song</button><button class="pb" data-sheet="sound" aria-label="Sound">🎛 Sound</button><button class="pb" data-sheet="master" aria-label="Master">🎚 Master</button></span><label class="bpm">Tempo <input id="bpm" type="range" min="60" max="160" value="124"><span id="bpmv">124</span></label></div>
+      <div class="row"><label class="bpm" style="flex:1 1 auto">Vibe <select id="vibe" aria-label="Vibe"></select></label><button id="dice" class="dice" aria-label="Randomize everything" title="Randomize">🎲</button><button id="evolve" class="dice evo" aria-pressed="false" title="Evolve: the dice nudges the track every 4 bars">EVOLVE</button></div>
+      <div class="row" id="keyrow"><label class="bpm" style="flex:0 1 auto">Key <select id="key" aria-label="Root note"></select></label><label class="bpm" style="flex:0 1 auto">Scale <select id="scale" aria-label="Scale"></select></label><button id="link" class="dice evo on" aria-pressed="true" title="Link: a progression brings its scale, a scale its progression">🔗 LINK</button><label class="bpm" style="flex:0 1 auto">Progression <select id="prog" aria-label="Chord progression"></select></label></div>
       <div class="row chips" id="chords" aria-live="polite"></div>
       <div class="row"><label class="bpm" style="flex:0 1 auto">Length <select id="len" aria-label="Pattern length"><option value="16">16 steps (1 bar)</option><option value="32">32 steps (2 bars)</option><option value="64" selected>64 steps (4 bars)</option></select></label></div>
       <p class="note" style="margin:0;color:#cfe5d4">Every pattern is written for 4 bars; a shorter length plays its first one or two. The progression keeps moving from loop to loop.</p>
@@ -799,6 +826,28 @@ function kickToBar(bar) {          /* an 808 kick tuned to the key follows each 
   const kit = I.findSound(loaded[0]); if (kit && kit.KEYTUNE) I.tuneKick(w, 0, kit, I.chordRoot(bar * 16));
 }
 $("prog").innerHTML = Object.keys(I.PROGS).map((k, i) => `<option value="${i}">${I.MOODS[k] ? I.MOODS[k] + " " : ""}${k}</option>`).join("");
+/* phones: the whole thing on one screen; Song, Sound and Master open as sheets over the bottom (their own parts of
+ * the page, moved in and put back) */
+const isPhone = () => matchMedia("(max-width: 820px)").matches;
+const SHEET_PARTS = {song: () => [$("bpm").closest("label"), $("keyrow"), $("len").closest(".row"), document.querySelector(".screen")],
+  sound: () => [$("snd").closest(".panel")], master: () => [$("fx")]};
+let sheetOpen = null, sheetHome = [];
+function closeSheet() {
+  for (const [node, mark] of sheetHome) mark.replaceWith(node);
+  sheetHome = []; sheetOpen = null; const sh = $("sheet"); if (sh) sh.remove();
+  for (const b of document.querySelectorAll(".pb")) b.classList.remove("on");
+}
+function openSheet(name) {
+  const was = sheetOpen; closeSheet(); if (was === name) return;
+  const sh = document.createElement("div"); sh.id = "sheet"; sh.setAttribute("role", "dialog"); sh.setAttribute("aria-label", name);
+  sh.innerHTML = `<div class="shh"><b>${{song: "Song", sound: "Sound", master: "Master"}[name]}</b><button id="shx" aria-label="Close">✕</button></div>`;
+  for (const node of SHEET_PARTS[name]()) { if (!node) continue; const mark = document.createComment("sheet"); node.replaceWith(mark); sheetHome.push([node, mark]); sh.appendChild(node); }
+  document.body.appendChild(sh); sheetOpen = name; $("shx").onclick = closeSheet;
+  for (const b of document.querySelectorAll(".pb")) b.classList.toggle("on", b.dataset.sheet === name);
+}
+for (const b of document.querySelectorAll(".pb")) b.addEventListener("click", () => openSheet(b.dataset.sheet));
+addEventListener("resize", () => { if (!isPhone() && sheetOpen) closeSheet(); });
+
 /* LINK: a progression and the scale it's built for travel together (off: any with any) */
 const PROG_SCALE = {"i–VI–III–VII": "Minor", "i–V–VI–iv": "Major", "i–VII–VI–V": "Minor", "i–VI–VII–i": "Minor", "i–VI (vamp)": "Minor",
   "i–VI–iv–V": "Harmonic minor", "i–V–VI–III–iv": "Minor", "i–IV–VI–V (Dorian)": "Dorian", "i–♭II (Phrygian)": "Phrygian",
