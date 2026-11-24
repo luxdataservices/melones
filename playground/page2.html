@@ -331,7 +331,7 @@ function pushDuck() { w.w_duckmode(fxState.duckOn, [1, 2, 4][fxState.duckEvery])
 function pushClap() { w.w_clap(fxState.wet, fxState.feed, fxState.swell, [1, 2, 4, 8][fxState.every]); }
 
 /* ---- lanes ---- */
-const DROWS = [["KICK", [36]], ["CLAP", [39, 38]], ["HAT", [42]], ["OPEN", [46]], ["TOM", [45, 47, 50]]];
+const DROWS = [["KICK", [36]], ["CLAP", [39, 38]], ["HAT", [42]], ["OPEN", [46]], ["TOM", [45, 47, 50]], ["BELL", [56]]];   /* BELL: GM 56, the kit's bell voice (no kit has a true cowbell) */
 const PC = ["C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"];
 const nn = n => PC[n % 12] + (Math.floor(n / 12) - 1);
 const LENP = () => 16;
@@ -451,7 +451,7 @@ function toggle(t, i, r) {
   if (t === 0) {
     const notes = DROWS[+r][1], v = Array.isArray(st[i]) ? st[i].slice() : [];
     const has = v.some(n => notes.includes(n));
-    let nv = has ? v.filter(n => !notes.includes(n)) : v.concat(+r === 4 ? [47] : notes);
+    let nv = has ? v.filter(n => !notes.includes(n)) : v.concat(+r === 4 ? [47] : +r === 5 ? [56] : notes);
     st[i] = nv.length ? Object.assign(nv.slice(0, 4), st[i] && st[i].acc ? {acc: 1} : {}, st[i] && st[i].roll ? {roll: st[i].roll} : {}) : null;
   } else if (st[i] != null && !/^tie/.test(st[i])) {
     st[i] = null; for (let j = i + 1; j < 64 && /^tie/.test(st[j]); j++) st[j] = null;
