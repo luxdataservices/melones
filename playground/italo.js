@@ -296,8 +296,8 @@ function tuneKick(w, t, s, extra) {
   const tune = Math.round((s.E ? s.E[1] : 64) + (target - base) * 16 / 3);
   w.w_tset(t, ID.P_E0 + 1, Math.max(0, Math.min(127, tune)));
 }
-let LEN = 64;                         /* pattern length in steps: 64 (four bars of 4/4) or 16 (one bar) */
-function setLen(n) { LEN = n === 16 ? 16 : 64; }
+let LEN = 64;                         /* pattern length in steps: 16, 32 or 64 (one, two or four bars of 4/4) */
+function setLen(n) { LEN = n === 16 || n === 32 ? n : 64; }
 const to64 = a => Array.from({length: 64}, (_, i) => a[i % a.length]);   /* a 1- or 2-bar pattern over 4 bars */
 function setKey(k) { KEY = k | 0; }
 /* PROGRESSIONS: the melodic lanes walk a chord progression over the 4 bars, one chord a bar (a 5-chord one splits
@@ -330,7 +330,9 @@ const PROGS = {
 const MINOR = [0, 2, 3, 5, 7, 8, 10];        /* A natural minor, semitones above A */
 let PROG = PROGS.Off;
 function setProg(name) { PROG = PROGS[name] || PROGS.Off; }
-function chordAt(i) { const c = PROG[(i >> 4) & 3]; return Array.isArray(c) ? c[(i & 15) < 8 ? 0 : 1] : c; }
+let PROG_OFF = 0;                            /* a loop shorter than 4 bars: the bar of the progression it starts on */
+function setProgOff(n) { PROG_OFF = n & 3; }
+function chordAt(i) { const c = PROG[((i >> 4) + PROG_OFF) & 3]; return Array.isArray(c) ? c[(i & 15) < 8 ? 0 : 1] : c; }
 function chordMove(n, c) {                   /* a note of the A minor pattern, moved to chord c */
   if (!c || (!c.d && !c.acc)) return n;
   const r = n - 9, oct = Math.floor(r / 12), pc = r - 12 * oct;
@@ -482,5 +484,5 @@ const SCENES = [
   {name: "Intro", on: [1, 1, 0, 0]}, {name: "Build", on: [1, 1, 1, 0]}, {name: "Full", on: [1, 1, 1, 1]}, {name: "Break", on: [0, 1, 1, 1]}
 ];
 const SCENE_SONG = [0, 1, 2, 2, 3, 2];     /* Song: each scene 4 bars */
-const ITALO = {LANE, SCENES, SCENE_SONG, ID, SOUNDS, SONG, CLAPS, BEATS, THEMES, setClaps, setBeat, setTheme, setKey, setLen, to64, PROGS, setProg, setBellKeys, progNames, progBars, allowedPcs, chordRoot, noteAt, tuneKick, findSound, applySound, setupSong, loadSection, writeSteps, partSteps};
+const ITALO = {LANE, SCENES, SCENE_SONG, ID, SOUNDS, SONG, CLAPS, BEATS, THEMES, setClaps, setBeat, setTheme, setKey, setLen, to64, PROGS, setProg, setProgOff, setBellKeys, progNames, progBars, allowedPcs, chordRoot, noteAt, tuneKick, findSound, applySound, setupSong, loadSection, writeSteps, partSteps};
 if (typeof module !== "undefined") module.exports = ITALO;
