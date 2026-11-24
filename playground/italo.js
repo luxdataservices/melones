@@ -14,7 +14,7 @@ const SID = 3, DRUM = 10;
 const SOUNDS = {
   bass: [
     {name: "808 ROLL", note: "Long sub with a pitch punch; slides glide between notes", eng: SID, pre: 4,
-     E: [1, 0, 0, 64, 127, 0, 7, 56], ATK: 0, DEC: 98, SUS: 96, REL: 82, ED_PIT: 10, VOICE: 2, GLIDE: 34, LEVEL: 118},
+     E: [1, 0, 0, 64, 127, 0, 7, 56], ATK: 0, DEC: 98, SUS: 96, REL: 82, VOICE: 2, GLIDE: 34, LEVEL: 118},
     {name: "1986 BASS", note: "Held saw bass, slow filter", eng: SID, pre: 6,
      E: [0, 1, 1, 64, 30, 8, 0, 30], ATK: 4, DEC: 90, SUS: 100, REL: 50, ED_FLT: 16, VOICE: 2, LEVEL: 108},
     {name: "BODY HEAT", note: "Pulse octave bass, plucky filter", eng: SID, pre: 3,
@@ -277,7 +277,10 @@ function applySound(w, t, s) {
   if (s.E) s.E.forEach((v, i) => w.w_tset(t, ID.P_E0 + i, v));
   for (const k of ["ATK", "DEC", "SUS", "REL", "ED_FLT", "ED_PIT", "ED_SHP", "VOICE", "GLIDE", "LRATE", "LWAVE", "LFADE", "LD_PIT", "LD_SHP", "LD_FLT", "LEVEL", "PAN"])
     if (s[k] !== undefined) w.w_tset(t, ID["P_" + k], s[k]);
-  for (const k of ["LD_PIT", "LD_SHP"]) if (s.eng !== DRUM && s[k] === undefined) w.w_tset(t, ID["P_" + k], 0);   /* none left over from the last sound */
+  /* nothing left over from the last sound on this lane: what a sound doesn't set starts neutral (a leftover pitch
+   * punch or glide bends every note off its pitch) */
+  if (s.eng !== DRUM) for (const [k, v] of [["ED_FLT", 0], ["ED_PIT", 0], ["ED_SHP", 0], ["GLIDE", 0], ["LD_PIT", 0], ["LD_SHP", 0], ["LD_FLT", 0], ["LFADE", 0], ["PAN", 0], ["DETUNE", 40]])
+    if (s[k] === undefined) w.w_tset(t, ID["P_" + k], v);
   /* the LFO: a sound's own LSYNC / LTRIG, else vibrato locked to the beat (1/8 triplets, ~6 Hz at 124 BPM, running
    * from the song's top), else free at LRATE */
   if (s.LD_PIT || s.LD_SHP || s.LD_FLT) {
@@ -357,7 +360,15 @@ function setScale(name) { SC = SCALES[name] || SCALES.Minor; }
 function toScale(m) { const pc = ((m - 9) % 12 + 12) % 12, k = MINOR.indexOf(pc); return k >= 0 ? m + SC[k] - MINOR[k] : m; }
 /* the progressions' chromatic chords (bII, bvi, vii°, the major V ...) are A natural minor's: in another scale a
  * chord is the scale's own triad on that step (its accidentals dropped), so nothing fights the scale */
-const own = c => c && (SC === SCALES.Minor || !c.acc) ? c : c && {d: c.d, rn: c.rn};
+const triadDim = d => { const r = toScale(chordMove0(57, {d})), t3 = ((toScale(chordMove0(60, {d})) - r) % 12 + 12) % 12, t5 = ((toScale(chordMove0(64, {d})) - r) % 12 + 12) % 12; return (t3 === 3 && t5 === 6) || (t3 === 4 && t5 === 8); };   /* diminished or augmented */
+/* ... and a diminished triad there (Major's vii°, Dorian's vi°) gives way to the chord a third below (V, IV), which
+ * shares two of its notes; Locrian, diminished at home, is left as it is */
+const own = c => {
+  if (!c || SC === SCALES.Minor) return c;
+  const o = {d: c.d, rn: c.rn};
+  if (SC !== SCALES.Locrian && triadDim(o.d)) o.d -= 2;
+  return o;
+};
 function chordMove(n, c) { return toScale(chordMove0(n, own(c))); }
 function chordMove0(n, c) {                  /* a note of the A minor pattern, moved to chord c (still in minor) */
   if (!c || (!c.d && !c.acc)) return n;
@@ -373,7 +384,7 @@ function progBars(key) {                     /* per bar: its numeral(s) and chor
   const RN = ["i", "ii", "iii", "iv", "v", "vi", "vii"];
   const rnOf = c => {                       /* Minor: the numeral as written; another scale: the triad's own */
     if (SC === SCALES.Minor) return c.rn;
-    const deg = ((c.d % 7) + 7) % 7, r = chordMove(57, c), t3 = ((chordMove(60, c) - r) % 12 + 12) % 12, t5 = ((chordMove(64, c) - r) % 12 + 12) % 12;
+    const deg = ((own(c).d % 7) + 7) % 7, r = chordMove(57, c), t3 = ((chordMove(60, c) - r) % 12 + 12) % 12, t5 = ((chordMove(64, c) - r) % 12 + 12) % 12;
     const up = t3 === 4 ? RN[deg].toUpperCase() : RN[deg];
     return up + (t5 === 6 ? "°" : t5 === 8 ? "+" : "");
   };

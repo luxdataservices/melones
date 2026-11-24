@@ -275,6 +275,7 @@ function ensureSound(t, name, force) {
   I.applySound(w, t, I.findSound(name)); loaded[t] = name;
   if (t === 0) { const bk = !!I.findSound(name).KEYTUNE; I.setBellKeys(bk); w.w_bellkeys(bk ? 1 : 0); }
   if (t && typeof keyShift !== "undefined") applyLive(t);
+  if (t === 1 && typeof applyWarp === "function") applyWarp();   /* the warp rides the LFO a sound resets */
   if (t === 1) applyWarp();
   if (t === 2) applyArpSync();
   w.w_tset(t, ID.P_SSWING, laneSwing(t)); w.w_tset(t, ID.P_ASWING, laneSwing(t));
@@ -741,7 +742,7 @@ $("vibe").innerHTML = `<option value="">Pick a vibe…</option>` + Object.keys(V
 $("vibe").addEventListener("change", () => { const v = VIBES[$("vibe").value]; if (v) applyVibe(v); });
 $("dice").addEventListener("click", () => {     /* a random everything that still fits together */
   const pick = a => a[Math.floor(Math.random() * a.length)], progs = Object.keys(I.PROGS).filter(k => k !== "Off");
-  const v = {key: Math.floor(Math.random() * 12), scale: pick(Object.keys(I.SCALES)), prog: Math.random() < 0.15 ? "Off" : pick(progs),
+  const v = {key: Math.floor(Math.random() * 12), scale: pick(Object.keys(I.SCALES).filter(k => k !== "Locrian")), prog: Math.random() < 0.15 ? "Off" : pick(progs),
     bpm: 112 + 2 * Math.floor(Math.random() * 15), swing: pick([0, 0, 0, 1, 2, 4]), lanes: KINDS.map(k => pick(I.LANE[k]).name),
     sounds: KINDS.map(k => pick(I.SOUNDS[k]).name)};
   $("vibe").value = ""; applyVibe(v);
