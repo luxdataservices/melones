@@ -477,6 +477,20 @@ function arp4(a, fill, c) {
   put(0, a); put(1, c || a); put(2, a); put(3, fill); return s;
 }
 const bar = (list, n = 16) => { const s = new Array(n).fill(null); for (const [st, v, len, sl] of list) { s[st] = sl && len === 1 ? Object.assign([v].flat(), {slide: 1}) : v; for (let i = 1; i < (len || 1); i++) s[st + i] = sl && i === len - 1 ? "tieS" : "tie"; } return s; };
+/* "Disco": four on the floor, snare + clap on 2 and 4, the open hat's "tss" on every off-beat 8th with 16th hats
+ * between, a kick pickup into beat 3; bar 4 ends in a snare run */
+function discoBars() {
+  const s = [];
+  for (let bar = 0; bar < 4; bar++) for (let b = 0; b < 16; b++) {
+    const n = [];
+    if (b % 4 === 0 || b === 7) n.push(K);
+    if (b === 4 || b === 12) n.push(SN, CL);
+    if (bar === 3 && b >= 13) n.push(SN);
+    n.push(b % 4 === 2 ? HO : HC);
+    s.push(b === 4 || b === 12 || b % 4 === 2 ? acc(n) : n);
+  }
+  return s;
+}
 function italoBar() {                       /* four on the floor, snare + clap on 2 and 4, 16th hats, open hats off the beat */
   const s = [];
   for (let b = 0; b < 16; b++) { const n = []; if (b % 4 === 0) n.push(K); if (b === 4 || b === 12) n.push(SN, CL); n.push(b % 4 === 2 ? HO : HC); s.push(b % 4 === 0 ? acc(n) : n); }
@@ -491,11 +505,42 @@ function miamiBar() {                       /* Miami bass: the 808's boom on 1, 
   }
   return s;
 }
+/* STYLE VARIANTS: each drum pattern played as rock (rk), disco (dc), hip-hop (hh) and jazz (jz): the style's kick,
+ * snare and time-keeping over four bars (a fill in the fourth), keeping the pattern's signature (Italo's and Disco's
+ * open hats, Spacer's claps, Miami's cowbell, Trap's rolling hats). Named like "Italo-hh-1". */
+const RD = 51;                                   /* the ride cymbal (the kits' cymbal, a little down) */
+const STYLE = {
+  rk: (bar, b) => { const n = []; if (b === 0 || b === 8 || b === 10) n.push(K); if (b === 4 || b === 12) n.push(SN);
+    if (bar === 3 && b >= 12) { n.length = 0; n.push(b < 14 ? TH : TL); if (b === 15) n.push(K); } else if (b % 2 === 0) n.push(HC);
+    if (bar === 0 && b === 0) n.push(49); return [n, b === 4 || b === 12]; },
+  dc: (bar, b) => { const n = []; if (b % 4 === 0) n.push(K); if (b === 4 || b === 12) n.push(SN, CL);
+    if (bar === 3 && b >= 14) n.push(SN); n.push(b % 4 === 2 ? HO : HC); return [n, b === 4 || b === 12 || b % 4 === 2]; },
+  hh: (bar, b) => { const n = [], ks = bar % 2 ? [0, 3, 10] : [0, 7, 10]; if (ks.includes(b)) n.push(K); if (b === 4 || b === 12) n.push(SN);
+    if (b === 15 && bar % 2) n.push(SN); if (b % 2 === 0) n.push(HC); if (bar === 3 && b === 14) n.push(HO); return [n, b === 4 || b === 12]; },
+  jz: (bar, b) => { const n = []; if ([0, 4, 7, 8, 12, 15].includes(b)) n.push(RD); if (b === 4 || b === 12) n.push(44);
+    if (b === 0 && bar % 2 === 0) n.push(K); if ((bar === 1 && b === 11) || (bar === 2 && b === 6) || (bar === 3 && (b === 10 || b === 14))) n.push(SN);
+    if (bar === 3 && b === 15) n.push(K); return [n, b === 0 || b === 8]; },
+};
+const SIGNATURE = {Italo: [HO], Disco: [HO], Spacer: [CL], Miami: [56], Trap: [HC, HO]};
+function styleVariant(base, code) {
+  const src = to64(base.steps()), sig = SIGNATURE[base.name], out = [];
+  for (let i = 0; i < 64; i++) {
+    const [n, ac] = STYLE[code](i >> 4, i & 15), v = Array.isArray(src[i]) ? src[i] : [];
+    const keep = v.filter(x => sig.includes(x));
+    let notes = keep.some(x => x === HC || x === HO) ? n.filter(x => x !== HC && x !== HO && x !== 44) : n.slice();
+    if (sig.includes(HC) && !keep.length) notes = notes.filter(x => x !== HC && x !== HO);   /* Trap: its hats only */
+    notes = [...new Set(notes.concat(keep))];
+    const st = ac ? acc(notes) : notes;
+    if (v.roll && sig.includes(v.roll[4])) st.roll = v.roll.slice();
+    out.push(st);
+  }
+  return out;
+}
 const LANE = {
   drums: [
     {name: "Italo", sound: "SID DIGI KIT", steps: () => italoBar()},
     {name: "Spacer", sound: "SID DIGI KIT", steps: () => [...spacerBar(0), ...spacerBar(1)], bpm: 124},
-    {name: "1986", sound: "SIMMONS KIT", steps: () => bar1986(), bpm: 125},
+    {name: "Disco", sound: "SIMMONS KIT", steps: () => discoBars(), bpm: 122},
     {name: "Miami", sound: "808 BOOM", steps: () => miamiBar(), bpm: 126},
     {name: "Trap", sound: "808 KIT", steps: () => [...trapBar(0), ...trapBar(1), ...trapBar(0), ...trapBar(2)], bpm: 140}
   ],
@@ -525,6 +570,10 @@ const LANE = {
     {name: "Brass", sound: "HI-NRG BRASS", steps: () => bar([[2, A, 1], [6, A, 1], [10, A, 1], [14, A, 1]])}
   ]
 };
+for (const base of LANE.drums.slice()) for (const code of ["rk", "dc", "hh", "jz"]) {
+  if (base.name === "Disco" && code === "dc") continue;
+  LANE.drums.push({name: `${base.name}-${code}-1`, sound: base.sound, steps: () => styleVariant(base, code), group: base.name});
+}
 /* scenes: which lanes play */
 const SCENES = [
   {name: "Intro", on: [1, 1, 0, 0]}, {name: "Build", on: [1, 1, 1, 0]}, {name: "Full", on: [1, 1, 1, 1]}, {name: "Break", on: [0, 1, 1, 1]}
