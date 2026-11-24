@@ -366,7 +366,7 @@ const triadDim = d => { const r = toScale(chordMove0(57, {d})), t3 = ((toScale(c
 const own = c => {
   if (!c || SC === SCALES.Minor) return c;
   const o = {d: c.d, rn: c.rn};
-  if (SC !== SCALES.Locrian && triadDim(o.d)) o.d -= 2;
+  for (let k = 0; k < 3 && SC !== SCALES.Locrian && triadDim(o.d); k++) o.d -= 2;   /* until it's a plain major or minor */
   return o;
 };
 function chordMove(n, c) { return toScale(chordMove0(n, own(c))); }

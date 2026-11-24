@@ -731,21 +731,40 @@ function kickToBar(bar) {          /* an 808 kick tuned to the key follows each 
 $("prog").innerHTML = Object.keys(I.PROGS).map((k, i) => `<option value="${i}">${k}</option>`).join("");
 $("prog").addEventListener("change", () => { I.setProg(Object.keys(I.PROGS)[+$("prog").value]); progOff = 0; I.setProgOff(0); writeTrack(0); for (let t = 1; t < 4; t++) { writeTrack(t); $("g" + t).innerHTML = gridHtml(t); } lastPh = []; kickToBar(Math.max(0, progBar)); status2(); });
 /* VIBES: one tap sets the key, scale, chords, tempo, swing and all four lanes (then change anything) */
-const VIBES = {
-  "Nightdrive": {key: 9, scale: "Minor", prog: "i–VI–III–VII", bpm: 124, swing: 0, lanes: ["Italo", "Gallop", "Stabs", "Strings"]},
-  "Booty": {key: 2, scale: "Phrygian", prog: "i–♭II (Phrygian)", bpm: 128, swing: 2, lanes: ["Miami", "808", "Pings", "Hook"]},
-  "Goth": {key: 4, scale: "Harmonic minor", prog: "i–VI–iv–V", bpm: 118, swing: 0, lanes: ["1986", "Hold", "Answer", "Bells"]},
-  "Sunny": {key: 0, scale: "Major", prog: "i–VI–III–VII", bpm: 126, swing: 0, lanes: ["Spacer", "Octaves", "Drop", "Ghostcar"]},
-  "Trap": {key: 7, scale: "Minor", prog: "i–♭vi–i–♭II", bpm: 140, swing: 0, lanes: ["Trap", "808", "Riser", "Brass"]},
+const VIBES = {   /* the pick's starting point, then what the dice may choose from while the vibe stays */
+  "Nightdrive": {key: 9, scale: "Minor", prog: "i–VI–III–VII", bpm: 124, swing: 0, lanes: ["Italo", "Gallop", "Stabs", "Strings"],
+    roll: {scale: ["Minor", "Dorian"], prog: ["i–VI–III–VII", "i–VII–VI–V", "i–VI–iv–V", "i–V–VI–III–iv"], bpm: [118, 128], swing: [0, 0, 1],
+      lanes: [["Italo", "Spacer"], ["Gallop", "Octaves", "Electro"], ["Stabs", "Drop", "Riser", "Answer"], ["Strings", "Ghostcar", "Hook"]],
+      sounds: [["SID DIGI KIT", "SID CRUNCH", "SIMMONS KIT"], ["BODY HEAT", "MONEY BASS", "1986 BASS", "RUBBER BASS"], ["CRYSTAL ARP", "TWINKLE", "LASER ARP"], null]}},
+  "Booty": {key: 2, scale: "Phrygian", prog: "i–♭II (Phrygian)", bpm: 128, swing: 2, lanes: ["Miami", "808", "Pings", "Hook"],
+    roll: {scale: ["Phrygian", "Minor"], prog: ["i–♭II (Phrygian)", "i–♭vi–i–♭II", "i–iv–♭II–V", "i–VII–VI–V"], bpm: [124, 134], swing: [1, 2, 3],
+      lanes: [["Miami"], ["808"], ["Pings", "Stabs", "Answer"], ["Hook", "Bells", "Brass"]],
+      sounds: [["808 BOOM", "808 KIT"], ["808 ROLL"], ["TWINKLE", "CRYSTAL ARP", "SYNC ARP"], ["CYBER LEAD", "XALAN SYNC", "HI-NRG BRASS", "SYNDRUM PEW"]]}},
+  "Goth": {key: 4, scale: "Harmonic minor", prog: "i–VI–iv–V", bpm: 118, swing: 0, lanes: ["1986", "Hold", "Answer", "Bells"],
+    roll: {scale: ["Harmonic minor", "Minor", "Phrygian"], prog: ["i–VI–iv–V", "i–vii°–♭vi–V", "i–♯iv°–iv–V", "i–III+–VI–V", "i–♭vi–i–♭II"], bpm: [110, 122], swing: [0],
+      lanes: [["1986", "Italo", "Spacer"], ["Hold", "Octaves", "Gallop"], ["Answer", "Drop", "Stabs"], ["Bells", "Strings", "Ghostcar"]],
+      sounds: [["SIMMONS KIT", "SID DIGI KIT", "SIMMONS BIG"], ["1986 BASS", "CASCO SUB", "BODY HEAT"], ["LASER ARP", "SYNC ARP", "CRYSTAL ARP"], ["STOP PULSE", "VELVET STRINGS", "GHOSTCAR"]]}},
+  "Sunny": {key: 0, scale: "Major", prog: "i–VI–III–VII", bpm: 126, swing: 0, lanes: ["Spacer", "Octaves", "Drop", "Ghostcar"],
+    roll: {scale: ["Major", "Lydian", "Mixolydian"], prog: ["i–VI–III–VII", "i–VI–iv–V", "i–VII–VI–V", "i–IV–VI–V (Dorian)"], bpm: [120, 130], swing: [0, 1],
+      lanes: [["Spacer", "Italo"], ["Octaves", "Gallop", "Electro"], ["Drop", "Pings", "Stabs", "Riser"], ["Ghostcar", "Hook", "Brass", "Strings"]],
+      sounds: [["SID DIGI KIT", "SIMMONS KIT"], ["BODY HEAT", "RUBBER BASS", "ARP BASS"], ["TWINKLE", "CRYSTAL ARP", "LASER ARP"], ["GHOSTCAR", "CYBER LEAD", "HI-NRG BRASS"]]}},
+  "Trap": {key: 7, scale: "Minor", prog: "i–♭vi–i–♭II", bpm: 140, swing: 0, lanes: ["Trap", "808", "Riser", "Brass"],
+    roll: {scale: ["Minor", "Phrygian", "Harmonic minor"], prog: ["i–♭vi–i–♭II", "i–♭II (Phrygian)", "i–VI–iv–V", "i–iv–♭II–V"], bpm: [136, 150], swing: [0, 0, 1],
+      lanes: [["Trap"], ["808"], ["Riser", "Pings", "Drop"], ["Brass", "Bells", "Strings"]],
+      sounds: [["808 KIT", "808 BOOM", "SID CRUNCH"], ["808 ROLL"], ["LASER ARP", "TWINKLE", "SYNC ARP"], ["HI-NRG BRASS", "STOP PULSE", "VELVET STRINGS", "LASER ZAP"]]}},
 };
 $("vibe").innerHTML = `<option value="">Pick a vibe…</option>` + Object.keys(VIBES).map(k => `<option>${k}</option>`).join("");
 $("vibe").addEventListener("change", () => { const v = VIBES[$("vibe").value]; if (v) applyVibe(v); });
-$("dice").addEventListener("click", () => {     /* a random everything that still fits together */
-  const pick = a => a[Math.floor(Math.random() * a.length)], progs = Object.keys(I.PROGS).filter(k => k !== "Off");
-  const v = {key: Math.floor(Math.random() * 12), scale: pick(Object.keys(I.SCALES).filter(k => k !== "Locrian")), prog: Math.random() < 0.15 ? "Off" : pick(progs),
-    bpm: 112 + 2 * Math.floor(Math.random() * 15), swing: pick([0, 0, 0, 1, 2, 4]), lanes: KINDS.map(k => pick(I.LANE[k]).name),
-    sounds: KINDS.map(k => pick(I.SOUNDS[k]).name)};
-  $("vibe").value = ""; applyVibe(v);
+$("dice").addEventListener("click", () => {     /* inside the picked vibe (its scales, chords, tempo, patterns, sounds), else anything */
+  const pick = a => a[Math.floor(Math.random() * a.length)], vb = VIBES[$("vibe").value], r = vb && vb.roll;
+  const all = {scale: Object.keys(I.SCALES).filter(k => k !== "Locrian"), prog: Object.keys(I.PROGS).filter(k => k !== "Off")};
+  const lanes = KINDS.map((k, t) => r ? pick(r.lanes[t]) : pick(I.LANE[k]).name);
+  const v = {key: Math.floor(Math.random() * 12), scale: pick(r ? r.scale : all.scale),
+    prog: r ? pick(r.prog) : Math.random() < 0.15 ? "Off" : pick(all.prog),
+    bpm: r ? r.bpm[0] + 2 * Math.floor(Math.random() * ((r.bpm[1] - r.bpm[0]) / 2 + 1)) : 112 + 2 * Math.floor(Math.random() * 15),
+    swing: pick(r ? r.swing : [0, 0, 0, 1, 2, 4]), lanes,
+    sounds: KINDS.map((k, t) => r ? (r.sounds[t] ? pick(r.sounds[t]) : I.LANE[k].find(p => p.name === lanes[t]).sound) : pick(I.SOUNDS[k]).name)};
+  applyVibe(v);
 });
 function applyVibe(v) {
   const set = (id, val) => { $(id).value = val; $(id).dispatchEvent(new Event("change")); };
