@@ -656,13 +656,17 @@ addEventListener("keydown", e => {
 });
 addEventListener("keyup", e => { const k = compKey(e); if (k >= 0 && k < 27) keyOff(k); });
 addEventListener("blur", () => { manual.clear(); pushKeys(); });
-function keyOn(k) {               /* Key lock: a note outside the chord (or the scale) is ignored, on every melodic lane */
+const snapped = new Map();         /* a held key -> the key it snapped to (its release lets that go) */
+function lockFor(t) { return t === 0 ? 0 : t === 2 && $("prog").selectedIndex > 0 ? 1 : lock; }   /* the arp: the bar's chord */
+function keyOn(k) {               /* a played note snaps to the nearest one the lane may play: the scale, or (the arp, with a
+                                   * progression) the bar's chord; key k plays C + k - 7, so (k + 8) % 12 above A */
   start();
-  const ok = I.allowedPcs(curStep(), sel === 0 ? 0 : lock);
-  if (ok && !ok.includes((k + 8) % 12)) return;   /* key k plays C + k - 7: (k + 8) % 12 above A */
+  const ok = I.allowedPcs(curStep(), lockFor(sel));
+  const raw = k; if (ok && !ok.includes((k + 8) % 12)) { let s = -1; for (let d = 1; d < 7 && s < 0; d++) { if (k - d >= 0 && ok.includes((k - d + 8 + 24) % 12)) s = k - d; else if (k + d < 27 && ok.includes((k + d + 8) % 12)) s = k + d; } if (s < 0) return; k = s; }
+  snapped.set(raw, k);
   manual.add(k); pushKeys();
 }
-function keyOff(k) { manual.delete(k); pushKeys(); }
+function keyOff(k) { const s = snapped.has(k) ? snapped.get(k) : k; snapped.delete(k); if (![...snapped.values()].includes(s)) manual.delete(s); pushKeys(); }
 /* with a progression on, a held key on a chord mode plays the bar's chord (its accidentals too): the chord's three
  * notes from the chord note nearest the key up, re-voiced at every chord change; the firmware's own CHRD (which
  * builds on the plain minor scale) is off meanwhile */
@@ -717,7 +721,7 @@ function status2() {
 }
 function curStep() { return playing ? w.w_seqidx(sel || 1) : 0; }
 function keyLock() {               /* dim the keys a played note can't take now */
-  const ok = I.allowedPcs(curStep(), sel === 0 ? 0 : lock);
+  const ok = I.allowedPcs(curStep(), lockFor(sel));
   for (const el of document.querySelectorAll(".key")) el.classList.toggle("off", !!ok && !ok.includes((+el.dataset.k + 8) % 12));
 }
 function kickToBar(bar) {          /* an 808 kick tuned to the key follows each chord's root */

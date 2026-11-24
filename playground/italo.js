@@ -355,7 +355,10 @@ const SCALES = {
 let SC = SCALES.Minor;
 function setScale(name) { SC = SCALES[name] || SCALES.Minor; }
 function toScale(m) { const pc = ((m - 9) % 12 + 12) % 12, k = MINOR.indexOf(pc); return k >= 0 ? m + SC[k] - MINOR[k] : m; }
-function chordMove(n, c) { return toScale(chordMove0(n, c)); }
+/* the progressions' chromatic chords (bII, bvi, vii°, the major V ...) are A natural minor's: in another scale a
+ * chord is the scale's own triad on that step (its accidentals dropped), so nothing fights the scale */
+const own = c => c && (SC === SCALES.Minor || !c.acc) ? c : c && {d: c.d, rn: c.rn};
+function chordMove(n, c) { return toScale(chordMove0(n, own(c))); }
 function chordMove0(n, c) {                  /* a note of the A minor pattern, moved to chord c (still in minor) */
   if (!c || (!c.d && !c.acc)) return n;
   const r = n - 9, oct = Math.floor(r / 12), pc = r - 12 * oct;
@@ -367,7 +370,14 @@ function chordMove0(n, c) {                  /* a note of the A minor pattern, m
 }
 const noteAt = (n, i) => chordMove(n, chordAt(i));
 function progBars(key) {                     /* per bar: its numeral(s) and chord name(s) in the key */
-  return PROG.map(c => { const a = Array.isArray(c) ? c : [c]; return {rn: a.map(x => x.rn).join(" / "), name: a.map(x => chordName(x, key)).join(" / ")}; });
+  const RN = ["i", "ii", "iii", "iv", "v", "vi", "vii"];
+  const rnOf = c => {                       /* Minor: the numeral as written; another scale: the triad's own */
+    if (SC === SCALES.Minor) return c.rn;
+    const deg = ((c.d % 7) + 7) % 7, r = chordMove(57, c), t3 = ((chordMove(60, c) - r) % 12 + 12) % 12, t5 = ((chordMove(64, c) - r) % 12 + 12) % 12;
+    const up = t3 === 4 ? RN[deg].toUpperCase() : RN[deg];
+    return up + (t5 === 6 ? "°" : t5 === 8 ? "+" : "");
+  };
+  return PROG.map(c => { const a = Array.isArray(c) ? c : [c]; return {rn: a.map(rnOf).join(" / "), name: a.map(x => chordName(x, key)).join(" / ")}; });
 }
 /* the pitch classes (0 = A, before KEY) a played note may take at step i: LOCK 1 CHORD (the chord of that step),
  * 2 SCALE (A natural minor, and G# under a major V), 0 OFF: all */
@@ -375,13 +385,14 @@ function allowedPcs(i, lock) {
   if (!lock) return null;
   const c = chordAt(i);
   if (lock === 1) return [0, 3, 7].map(x => (((chordMove(57 + x, c) - 9) % 12) + 12) % 12);
-  return SC.map((x, j) => (x + (c && c.acc && c.acc[j] || 0) + 12) % 12);
+  const o = own(c);
+  return SC.map((x, j) => (x + (o && o.acc && o.acc[j] || 0) + 12) % 12);
 }
 const chordRoot = i => chordMove(57, chordAt(i)) - 57;   /* semitones the chord's root sits from A */
 function progNames(key) { return PROG.map(c => Array.isArray(c) ? c.map(x => chordName(x, key)).join("/") : chordName(c, key)); }
 function chordName(c, key) {                 /* "Am", "Bb", "G#dim", "A+" ... in the current key */
   const N = ["C", "C#", "D", "Eb", "E", "F", "F#", "G", "Ab", "A", "Bb", "B"], S = ["C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"];
-  const deg = ((c.d % 7) + 7) % 7, up = c.acc && c.acc[deg] > 0;
+  const o = own(c), deg = ((o.d % 7) + 7) % 7, up = o.acc && o.acc[deg] > 0;
   const r = chordMove(57, c), t3 = ((chordMove(60, c) - r) % 12 + 12) % 12, t5 = ((chordMove(64, c) - r) % 12 + 12) % 12;
   return (up ? S : N)[((r + key) % 12 + 12) % 12] + (t3 === 3 ? (t5 === 6 ? "dim" : "m") : t5 === 8 ? "+" : "");
 }
