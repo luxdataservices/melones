@@ -106,5 +106,6 @@ EXPORT("w_duck") void w_duck(uint32_t t, uint32_t amt) { if (t < NPART) duck.amt
 EXPORT("w_duckget") uint32_t w_duckget(uint32_t t) { return t < NPART ? duck.amt[t] : 0; }
 EXPORT("w_duckrel") void w_duckrel(uint32_t v) { duck.rel = (uint8_t)(v & 127u); }
 EXPORT("w_duckenv") int32_t w_duckenv(void) { return duck.env; }
-EXPORT("w_clap") void w_clap(uint32_t wet, uint32_t feed, uint32_t swell)
-{ cfx.wet = (uint8_t)(wet & 127u); cfx.feed = (uint8_t)(feed & 127u); cfx.swell = (uint8_t)(swell & 127u); }
+EXPORT("w_clap") void w_clap(uint32_t wet, uint32_t feed, uint32_t swell, uint32_t every)
+{ cfx.wet = (uint8_t)(wet & 127u); cfx.feed = (uint8_t)(feed & 127u); cfx.swell = (uint8_t)(swell & 127u);
+  cfx.every = (uint8_t)(every == 2 || every == 4 || every == 8 ? every : 1); }

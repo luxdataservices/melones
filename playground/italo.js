@@ -118,7 +118,7 @@ const SONG = {
   defaults: ["SID DIGI KIT", "BODY HEAT", "TWINKLE", "CYBER LEAD"],
   duck: [0, 52, 30, 38],        /* DUCK per track: the kick pumps bass, arp and lead/pad, gently */
   duckRel: 76,
-  clap: [80, 100, 90],          /* INFINITY CLAP: wet, feed (how long the wash hangs), swell (the reverse into each clap) */                  /* DUCK REL: about 250 ms, the kick's beat at 118 BPM */
+  clap: [80, 100, 90, 4],       /* INFINITY CLAP: wet, feed (how long the wash hangs), swell (the reverse in), every Nth clap */                  /* DUCK REL: about 250 ms, the kick's beat at 118 BPM */
   arrange: [0, 1, 2, 3, 4, 2, 3],  /* sections in order, 4 bars each */
   sections: [
     {name: "Intro", drums: "hats", bass: "gallop", arp: null, lead: "strings"},
@@ -194,7 +194,7 @@ function setupSong(w, chosen) {
   CUR.length = 0;
   ["drums", "bass", "arp", "lead"].forEach((k, t) => { const n = chosen[k]; applySound(w, t, findSound(n)); CUR[t] = n; });
   SONG.duck.forEach((a, t) => w.w_duck(t, a)); w.w_duckrel(SONG.duckRel);
-  w.w_clap(SONG.clap[0], SONG.clap[1], SONG.clap[2]);
+  w.w_clap(SONG.clap[0], SONG.clap[1], SONG.clap[2], SONG.clap[3]);
 }
 const ITALO = {ID, SOUNDS, SONG, findSound, applySound, setupSong, loadSection, writeSteps, partSteps};
 if (typeof module !== "undefined") module.exports = ITALO;

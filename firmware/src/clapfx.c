@@ -12,6 +12,9 @@
  *    pattern repeat). The first SWELL of this clap's wash is recorded, then played backwards so that its end, the
  *    wash's onset, lands on the expected clap: a crescendo into the hit. A clap that does not come still had its
  *    swell, as a reverse reverb on tape would.
+ *  - EVERY (1, 2, 4, 8): only every Nth clap from the start of play crashes. The clap before it feeds the room
+ *    silently (its wash is what the swell is made of) and the room is heard from the Nth clap on: one swell into
+ *    the Nth clap and its wash, then quiet until the next.
  *  - Wet 0 (the default): nothing runs; the mix is bit for bit as without it. */
 static int32_t mix_l[CTL], mix_r[CTL];        /* (mix.c's bus, declared again: it comes later) */
 #define CFX_SW 30870                           /* the longest swell: 700 ms */
@@ -23,7 +26,10 @@ static int32_t mix_l[CTL], mix_r[CTL];        /* (mix.c's bus, declared again: i
 #define CFX_A1 441
 #define CFX_W 23                               /* the right channel's allpasses are this much longer */
 static struct {
-    uint8_t wet, feed, swell;                  /* WET, FEED, SWELL 0..127 */
+    uint8_t wet, feed, swell, every;           /* WET, FEED, SWELL 0..127; EVERY 1, 2, 4, 8 */
+    uint8_t playing;                           /* the transport, last block: a start counts the claps from 0 */
+    uint32_t count;                            /* claps since play started */
+    float og, ot;                              /* the room's output gain, and where it is heading */
     uint8_t trig;                              /* a clap started in this block */
     uint32_t now, last, gate;                  /* samples since the start; the last clap's time; the gate's samples left */
     uint32_t rec, rec_len, play_at, play_len, play_pos;  /* swell recording, then its reversed playback */
@@ -34,7 +40,7 @@ static struct {
     float comb0[CFX_C0], comb1[CFX_C1], comb2[CFX_C2], comb3[CFX_C3];
     float apl0[CFX_A0], apl1[CFX_A1], apr0[CFX_A0 + CFX_W], apr1[CFX_A1 + CFX_W];
     int16_t sw[CFX_SW];
-} cfx = {.feed = 104, .swell = 90};
+} cfx = {.feed = 104, .swell = 90, .every = 1, .og = 1.f, .ot = 1.f};
 
 static inline __attribute__((always_inline)) void clapfx_note(const track_t *t, uint32_t note)
 {
@@ -71,7 +77,12 @@ static void clapfx_block(uint32_t n)
         return;
     }
     const float wet = (float)cfx.wet * (1.f / 127.f), g = 0.70f + 0.295f * (float)cfx.feed * (1.f / 127.f);
+    if (song.playing && !cfx.playing)
+        cfx.count = 0;
+    cfx.playing = song.playing;
     if (cfx.trig) {
+        uint32_t ev = cfx.every ? cfx.every : 1u, ph = cfx.count++ % ev;
+        uint32_t target = ph == ev - 1u, pre = ev == 1u || ph + 2u == ev;   /* the Nth clap; the one before it */
         uint32_t bpm = (uint32_t)clamp(song.g[G_BPM], 40, 240), beat = FS * 60u / bpm;
         uint32_t period = cfx.now - cfx.last, sw = (uint32_t)(FS / 20u) + (uint32_t)cfx.swell * (CFX_SW - FS / 20u) / 127u;
         if (!cfx.last || period < FS / 10u || period > 4u * beat)
@@ -80,11 +91,18 @@ static void clapfx_block(uint32_t n)
             sw = period * 3u / 4u;
         cfx.trig = 0;
         cfx.last = cfx.now ? cfx.now : 1u;
-        cfx.gate = FS * 12u / 100u;
-        cfx.rec = 0;                           /* record this clap's first SWELL of wash ... */
-        cfx.rec_len = sw;
-        cfx.play_at = cfx.now + period - sw;   /* ... and play it reversed to end on the next clap */
-        cfx.play_len = 0;
+        if (target || pre)
+            cfx.gate = FS * 12u / 100u;
+        if (target)
+            cfx.ot = 1.f;                      /* the crashing clap: the room is heard */
+        else if (pre)
+            cfx.ot = 0.f;                      /* the clap before it: into the room, unheard */
+        if (pre) {
+            cfx.rec = 0;                       /* record this clap's first SWELL of wash ... */
+            cfx.rec_len = sw;
+            cfx.play_at = cfx.now + period - sw;   /* ... and play it reversed to end on the next clap */
+            cfx.play_len = 0;
+        }
     }
     for (uint32_t i = 0; i < n && i < CTL; i++, cfx.now++) {
         float x = (float)cfx.in[i] * (1.f / 4096.f);
@@ -111,8 +129,9 @@ static void clapfx_block(uint32_t n)
             float v = (l + r) * 512.f;
             cfx.sw[cfx.rec++] = (int16_t)(v > 32767.f ? 32767.f : v < -32768.f ? -32768.f : v);
         }
-        l = l * 14000.f + sw_out * 44000.f;                   /* WET 127: the wash ~7 dB under the clap (as on */
-        r = r * 14000.f + sw_out * 44000.f;                   /* the records), the swell rising to just under it */
+        cfx.og += (cfx.ot - cfx.og) * (cfx.ot > cfx.og ? 0.02f : 0.004f);    /* in at once, out over ~6 ms */
+        l = l * 14000.f * cfx.og + sw_out * 44000.f;                   /* WET 127: the wash ~7 dB under the clap (as on */
+        r = r * 14000.f * cfx.og + sw_out * 44000.f;                   /* the records), the swell rising to just under it */
         mix_l[i] += (int32_t)(l * wet);
         mix_r[i] += (int32_t)(r * wet);
     }

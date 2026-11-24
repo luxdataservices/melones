@@ -5,7 +5,7 @@ const args = Object.fromEntries(process.argv.slice(2).map(a => a.split('=')));
 const solo = args.solo !== undefined ? +args.solo : -1, noduck = !!args.noduck, noclap = !!args.noclap;
 const w = new WebAssembly.Instance(mod, {}).exports;
 const chosen = {drums: "SID DIGI KIT", bass: "BODY HEAT", arp: "TWINKLE", lead: "CYBER LEAD", pad: "VELVET STRINGS", ...JSON.parse(args.chosen || "{}")};
-I.setupSong(w, chosen); if (noduck) for (let t = 0; t < 4; t++) w.w_duck(t, 0); if (noclap) w.w_clap(0, 0, 0);
+I.setupSong(w, chosen); if (noduck) for (let t = 0; t < 4; t++) w.w_duck(t, 0); if (noclap) w.w_clap(0, 0, 0, 1); if (args.every) w.w_clap(I.SONG.clap[0], I.SONG.clap[1], I.SONG.clap[2], +args.every);
 const kill = () => { if (args.nochorus) w.w_gset(I.ID.G_MFXTYPE, 0);
   for (let t = 0; t < 4; t++) { if (args.noglide) w.w_tset(t, I.ID.P_GLIDE, 0); if (args.novib) { w.w_tset(t, I.ID.P_LD_PIT, 0); w.w_tset(t, I.ID.P_LD_SHP, 0); } } };
 kill();
