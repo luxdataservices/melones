@@ -302,6 +302,8 @@ static __attribute__((noinline)) void mix_part(track_t *t,uint32_t n)
 #endif
     AP_START(mix_start);
     if(rendered){
+        clapfx_capture(t,part_buf,n);
+        duck_apply((uint32_t)(t-trk),part_buf,n);if(spread_on)duck_apply((uint32_t)(t-trk),spread_buf,n);
         mix_solo(t,part_buf,n);
         if(spread_on)mix_spread(t,part_buf,n);
         else{
@@ -352,7 +354,7 @@ static __attribute__((noinline)) void mix_block(int32_t *out,uint32_t n)
 #endif
     memset(mix_l,0,n*sizeof *mix_l);memset(mix_r,0,n*sizeof *mix_r);
     dither_block();                                     /* (before any engine renders: dsp.c) */
-    AP_START(events_start);events_block(n);AP_END(AP_EVENTS,events_start);
+    AP_START(events_start);events_block(n);AP_END(AP_EVENTS,events_start);duck_block(n);
     fx_bus_select();fx_send_on=(uint8_t)fx_bus_active();if(fx_send_on){memset(fx_send_l,0,n*sizeof *fx_send_l);memset(fx_send_r,0,n*sizeof *fx_send_r);
         if(fx_bus_separate){memset(fx_send_extra_l,0,sizeof fx_send_extra_l);memset(fx_send_extra_r,0,sizeof fx_send_extra_r);}}
     uint32_t nt=trk_parts();                            /* (the tracks not in use, the MIDI-only ones: none of their CPU) */
@@ -363,6 +365,7 @@ static __attribute__((noinline)) void mix_block(int32_t *out,uint32_t n)
 #if MELODEE_BATCH_AUDIO && !MELODEE_LEGACY_EXTRAS
     batch_ready=0;part_buf=part_storage;spread_buf=spread_storage;
 #endif
+    clapfx_block(n);
     fx_bus_start(n);
     /* MASTER is applied once, after punch FX and the limiter/DC blocker (the bus keeps every bit: #100) */
     fx_bus_join();
