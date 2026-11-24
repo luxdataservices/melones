@@ -115,7 +115,7 @@ input[type=text]{font:16px Rubik,system-ui,sans-serif;min-height:44px;border-rad
   <div>
     <h2>Play it</h2>
     <p>Press Play, or the space bar. Click steps to add or remove notes; drums have a row per drum. Click a lane's name area to choose which track the keyboard and the sound knobs control. Computer keys: Z S X D C V… is the lower octave, Q 2 W 3 E R… the upper.</p>
-    <p>Theme swaps the chords, bassline and lead melody together, so every part agrees, and Key moves all of it. The drum lane's second menu picks the beat: Italo, or Spacer (transcribed from your Spacer Woman loop, with its bap-bap-bap claps closing every second bar). Solo plays one lane alone (shift-click to solo several). DUCK on a lane is how hard the kick pushes it down; DUCK REL is how fast it comes back. The INFINITY CLAP sends each clap into a huge room: SWELL plays the start of that room backwards so it rises into the next clap, FEED sets how long the wash hangs (all the way to forever), WET how loud it all is, and EVERY picks which claps get it (every 4th: the last clap of each two bars).</p>
+    <p>Theme swaps the chords, bassline and lead melody together, so every part agrees, and Key moves all of it. The drum lane's second menu picks the beat: Italo, Spacer (transcribed from your Spacer Woman loop, with its bap-bap-bap claps closing every second bar), or 1986 (transcribed from your 1986 loop). Solo plays one lane alone (shift-click to solo several). DUCK on a lane is how hard the kick pushes it down; DUCK REL is how fast it comes back. The INFINITY CLAP sends each clap into a huge room: SWELL plays the start of that room backwards so it rises into the next clap, FEED sets how long the wash hangs (all the way to forever), WET how loud it all is, and EVERY picks which claps get it (every 4th: the last clap of each two bars).</p>
   </div>
   <div>
     <h2>Keep a sound</h2>
@@ -146,6 +146,11 @@ const pat = I.SONG.sections.map(sec => KINDS.map(k => I.partSteps(k, sec[k]).map
 let beat = "Italo";
 function setTheme(name) {               /* new bass, arp, pad and lead steps for every section; the drums stay */
   I.setTheme(name);
+  const th = I.THEMES[name];
+  if (th.sounds) for (const k in th.sounds) { chosen[k] = th.sounds[k]; }
+  if (th.sounds) for (let t = 1; t < 4; t++) ensureSound(t, curSound(t));
+  if (th.key !== undefined) { $("key").value = String((9 + th.key) % 12); $("key").dispatchEvent(new Event("change")); }
+  if (th.bpm) { $("bpm").value = th.bpm; $("bpm").dispatchEvent(new Event("input")); }
   I.SONG.sections.forEach((sec, i) => { for (let t = 1; t < 4; t++) { pat[i][t] = I.partSteps(KINDS[t], sec[KINDS[t]]).map(cp); orig[i][t] = pat[i][t].map(cp); } });
   for (let t = 1; t < 4; t++) writeTrack(t);
   $("themenote").textContent = I.THEMES[name].note + ". Key moves it all.";
@@ -154,7 +159,8 @@ function setTheme(name) {               /* new bass, arp, pad and lead steps for
 function setBeat(name) {                 /* new drum steps for every section; the user's other lanes stay */
   beat = name; I.setBeat(name);
   I.SONG.sections.forEach((sec, i) => { pat[i][0] = I.partSteps("drums", sec.drums).map(cp); orig[i][0] = pat[i][0].map(cp); });
-  if (name === "Spacer") { $("bpm").value = 124; $("bpm").dispatchEvent(new Event("input")); }
+  const tempo = {Spacer: 124, "1986": 125}[name];
+  if (tempo) { $("bpm").value = tempo; $("bpm").dispatchEvent(new Event("input")); }
   writeTrack(0); buildLanes();
 }
 const scopeBuf = new Float32Array(2048); let scopePos = 0;
@@ -449,7 +455,8 @@ $("themenote").textContent = I.THEMES["Night Drive"].note + ". Key moves it all.
 $("key").innerHTML = KEYS.map((k, i) => `<option value="${i}"${i === 9 ? " selected" : ""}>${k} minor</option>`).join("");
 $("key").addEventListener("change", () => {            /* the song is in A minor: move the melodic tracks, never the drums */
   let d = (+$("key").value - 9 + 12) % 12; if (d > 6) d -= 12; keyShift = d;
-  for (let t = 1; t < 4; t++) w.w_tset(t, ID.P_TRANS, d);
+  I.setKey(d);                                         /* the sequenced notes move ... */
+  for (let t = 1; t < 4; t++) { w.w_tset(t, ID.P_TRANS, d); writeTrack(t); }   /* ... and the keys play in the new key */
   status2();
 });
 $("bpm").addEventListener("input", () => { const v = +$("bpm").value; w.w_gset(ID.G_BPM, v); $("bpmv").textContent = v; status2(); });

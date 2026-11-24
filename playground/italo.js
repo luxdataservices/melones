@@ -13,6 +13,8 @@ const SID = 3, DRUM = 10;
  * SEND: to the master [chorus, reverb, room]. */
 const SOUNDS = {
   bass: [
+    {name: "1986 BASS", note: "Held saw bass, slow filter", eng: SID, pre: 6,
+     E: [0, 1, 1, 64, 30, 8, 0, 30], ATK: 4, DEC: 90, SUS: 100, REL: 50, ED_FLT: 16, VOICE: 2, LEVEL: 108},
     {name: "BODY HEAT", note: "Pulse octave bass, plucky filter", eng: SID, pre: 3,
      E: [0, 2, 0, 36, 30, 11, 0, 34], ATK: 0, DEC: 58, SUS: 34, REL: 22, ED_FLT: 34, VOICE: 1, LEVEL: 112},
     {name: "MONEY BASS", note: "Detuned saw octave bass", eng: SID, pre: 7,
@@ -37,6 +39,8 @@ const SOUNDS = {
      SEND: [30, 34, 0]}
   ],
   lead: [
+    {name: "1986 LEAD", note: "Bright detuned saw riff, short 8ths", eng: SID, pre: 8,
+     E: [0, 1, 1, 64, 104, 4, 0, 30], ATK: 0, DEC: 66, SUS: 70, REL: 40, ED_FLT: 14, VOICE: 1, LEVEL: 104, SEND: [50, 50, 0]},
     {name: "CYBER LEAD", note: "Saw lead, delayed vibrato, glide", eng: SID, pre: 8,
      E: [0, 1, 1, 64, 70, 5, 0, 18], ATK: 6, DEC: 70, SUS: 104, REL: 58, ED_FLT: 8, VOICE: 2, GLIDE: 8,
      LRATE: 88, LWAVE: 0, LFADE: 84, LD_PIT: 1, LEVEL: 112, SEND: [50, 64, 0]},
@@ -87,6 +91,14 @@ const THEMES = {
       [16, 74, 2], [18, 71, 2], [20, 67, 4], [24, 71, 2], [26, 74, 2], [28, 79, 4],
       [32, 72, 2], [34, 69, 2], [36, 65, 4], [40, 69, 2], [42, 72, 2], [44, 77, 4],
       [48, 80, 4], [52, 76, 2], [54, 71, 2], [56, 76, 6], [62, 71, 2]]},
+  "1986": {note: "Transcribed: Bm | Bm (A) | G | A held bass under an 8th-note B-A-G-F# riff (written in A minor, opens in B minor)",
+    bass: "held", key: 2, bpm: 125, sounds: {bass: "1986 BASS", lead: "1986 LEAD"},
+    ch: [[45, [57, 60, 64]], [45, [57, 60, 64]], [41, [53, 57, 60]], [43, [55, 59, 62]]],
+    bassSteps: [[0, 33, 16], [16, 33, 12], [28, 31, 4], [32, 29, 16], [48, 31, 16]],
+    mel: [[0, 69, 2], [2, 67, 2], [4, 65, 2], [6, 64, 2], [8, 69, 2], [10, 64, 2], [12, 65, 2], [14, 74, 1], [15, 71, 1],
+      [16, 69, 2], [18, 64, 2], [20, 65, 2], [22, 69, 1], [23, 72, 1], [24, 69, 1], [25, 72, 1], [26, 69, 1], [27, 76, 1], [28, 65, 2], [30, 64, 2],
+      [32, 69, 2], [34, 64, 2], [36, 65, 2], [38, 64, 2], [40, 69, 2], [42, 64, 2], [44, 65, 2], [46, 64, 2],
+      [48, 69, 2], [50, 67, 2], [52, 65, 2], [54, 64, 2], [56, 69, 2], [58, 64, 2], [60, 65, 2], [62, 64, 2]]},
   "Cosmic": {note: "Am Dm G C: long, soaring notes, gallop bass", bass: "gallop",
     ch: [[45, [57, 60, 64]], [50, [53, 57, 62]], [43, [55, 59, 62]], [48, [55, 60, 64]]],
     mel: [[0, 76, 6], [6, 74, 2], [8, 72, 4], [12, 71, 2], [14, 72, 2],
@@ -155,7 +167,15 @@ function spacerBar(bar2) {
   }
   return s;
 }
-const BEATS = {Italo: null, Spacer: [spacerBar(0), spacerBar(1)]};
+/* "1986": transcribed from a one-bar loop (125.4 BPM): kick 1, 7, 9, 11; snare + clap on 2 and 4 with claps on 8,
+ * 11, 12 and 16; open hats on 1 and 3, closed hats on the rest of the bar's busy half */
+function bar1986() {
+  const P = {1: [K, HO], 3: [HO], 5: [SN, CL, HC], 7: [K], 8: [CL], 9: [K, HC], 10: [HC], 11: [K, CL, HC], 12: [CL, HC], 13: [SN, CL, HC], 16: [CL]};
+  const s = [];
+  for (let b = 1; b <= 16; b++) { const n = (P[b] || []).slice(); s.push(b === 5 || b === 13 ? acc(n) : n); }
+  return s;
+}
+const BEATS = {Italo: null, Spacer: [spacerBar(0), spacerBar(1)], "1986": [bar1986()]};
 function drumPattern(style) {          /* kick on every beat, claps (CLAPS), 8th hats, open hat off the beat */
   const s = [];
   if (BEATS[beatStyle]) {               /* a transcribed beat: its bars over and over (the Intro drops its kick) */
@@ -221,14 +241,17 @@ function setupMaster(w) {
   w.w_gset(ID.G_MFX3TYPE, ID.FX_ROOM); w.w_gset(ID.G_MFX3MIX, 127); w.w_gset(ID.G_MFX3RATE, 40); w.w_gset(ID.G_MFX3CHAR, 50);
 }
 /* one track's 64 steps: notes[i] is a note, an array of notes, or null; len[i] ties it over the next steps */
+let KEY = 0;                          /* semitones from A minor: the sequenced notes of the melodic tracks move */
+function setKey(k) { KEY = k | 0; }
 function writeSteps(w, t, notes, gate) {
+  const tr = t ? KEY : 0;               /* (the drums never move: their notes are the kit's drums) */
   w.w_tset(t, ID.P_SLEN, 64);
   w.w_tset(t, ID.P_SGATE, gate || 64);
   for (let i = 0; i < 64; i++) {
     const v = notes[i];
     if (v === "tie") { w.w_step(t, i, 0, 0, ID.ST_TIE, 0, 0); continue; }
     const a = v == null ? [] : Array.isArray(v) ? v : [v];
-    let p = 0; a.forEach((n, k) => { p |= n << (8 * k); });
+    let p = 0; a.forEach((n, k) => { p |= Math.max(0, Math.min(127, n + tr)) << (8 * k); });
     const ac = v && v.acc !== undefined ? v.acc : i % 16 === 0;
     w.w_step(t, i, a.length, p >>> 0, a.length ? ID.ST_NOTE : ID.ST_REST, a.length && ac ? ID.SF_ACCENT : 0, a.length ? (ac ? 112 : 96) : 0);
   }
@@ -236,6 +259,11 @@ function writeSteps(w, t, notes, gate) {
 function partSteps(kind, part) {
   if (!part) return new Array(64).fill(null);
   if (kind === "drums") return drumPattern(part);
+  if (kind === "bass" && part === "gallop" && THEMES[themeName].bassSteps) {   /* a transcribed bassline: held notes */
+    const s = new Array(64).fill(null);
+    for (const [st, n, len] of THEMES[themeName].bassSteps) { s[st] = n; for (let i = 1; i < len; i++) s[st + i] = "tie"; }
+    return s;
+  }
   if (kind === "bass") return bassPattern(part === "gallop" ? THEMES[themeName].bass : part);
   if (kind === "arp") return arpPattern(part);
   if (part === "strings") {
@@ -265,5 +293,5 @@ function setupSong(w, chosen) {
   SONG.duck.forEach((a, t) => w.w_duck(t, a)); w.w_duckrel(SONG.duckRel);
   w.w_clap(SONG.clap[0], SONG.clap[1], SONG.clap[2], SONG.clap[3]);
 }
-const ITALO = {ID, SOUNDS, SONG, CLAPS, BEATS, THEMES, setClaps, setBeat, setTheme, findSound, applySound, setupSong, loadSection, writeSteps, partSteps};
+const ITALO = {ID, SOUNDS, SONG, CLAPS, BEATS, THEMES, setClaps, setBeat, setTheme, setKey, findSound, applySound, setupSong, loadSection, writeSteps, partSteps};
 if (typeof module !== "undefined") module.exports = ITALO;
