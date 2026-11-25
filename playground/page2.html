@@ -215,7 +215,7 @@ pre{background:#ece2c8;color:#231c14;box-shadow:inset 0 0 0 1px #b9aa88;border-r
     </div>
     <div class="ctl">
       <div class="row"><button id="play">Play</button><span class="phonebar"><button class="pb" data-sheet="song" aria-label="Song settings">⚙ Song</button><button class="pb" data-sheet="sound" aria-label="Sound">🎛 Sound</button><button class="pb" data-sheet="master" aria-label="Master">🎚 Master</button></span><label class="bpm">Tempo <input id="bpm" type="range" min="60" max="160" value="124"><span id="bpmv">124</span></label></div>
-      <div class="row"><select id="vibe" hidden aria-hidden="true"></select><button id="dice" class="dice" aria-label="Randomize everything" title="Randomize">🎲</button><button id="evolve" class="dice evo" aria-pressed="false" title="Evolve: the dice nudges the track every 4 bars">EVOLVE</button></div>
+      <div class="row"><label class="bpm" style="flex:1 1 auto">Vibe <select id="vibe" aria-label="Vibe"></select></label><button id="dice" class="dice" aria-label="Randomize everything" title="Randomize">🎲</button><button id="evolve" class="dice evo" aria-pressed="false" title="Evolve: the dice nudges the track every 4 bars">EVOLVE</button></div>
       <div class="row" id="keyrow"><label class="bpm" style="flex:0 1 auto">Key <select id="key" aria-label="Root note"></select></label><label class="bpm" style="flex:0 1 auto">Scale <select id="scale" aria-label="Scale"></select></label><label class="bpm" style="flex:1 1 auto">Chords <select id="prog" aria-label="Chord progression"></select></label></div>
       <div class="row chips" id="chords" aria-live="polite"></div>
       <div class="row"><label class="bpm" style="flex:0 1 auto">Length <select id="len" aria-label="Pattern length"><option value="16">16 steps (1 bar)</option><option value="32">32 steps (2 bars)</option><option value="64" selected>64 steps (4 bars)</option></select></label></div>
@@ -873,19 +873,33 @@ function buildProgs(keep) {                  /* keep: the id (or its place in th
   return pick;
 }
 $("prog").addEventListener("change", () => { I.setProg($("prog").value); progOff = 0; I.setProgOff(0); writeTrack(0); for (let t = 1; t < 4; t++) { writeTrack(t); $("g" + t).innerHTML = gridHtml(t); } lastPh = []; kickToBar(Math.max(0, progBar)); status2(); });
-const VIBES = {};   /* none yet: they come back one by one */
+const VIBES = {   /* a vibe: its key, scale, chords, tempo, swing and its own stock pattern on every lane; the dice keeps
+                   the patterns and rolls the rest inside the vibe */
+  "Italo": {key: 9, scale: "Minor", prog: "Minor: i–VI–III–VII", bpm: 122, swing: 0, lanes: ["Italo", "Italo", "Italo", "Italo"],
+    roll: {scale: ["Minor", "Dorian"], bpm: [116, 126], swing: [0, 0, 1], sounds: [["SID DIGI KIT", "SID CRUNCH", "SIMMONS KIT"], ["BODY HEAT", "MONEY BASS", "1986 BASS"], ["CRYSTAL ARP", "TWINKLE", "LASER ARP"], ["CYBER LEAD", "GHOSTCAR", "XALAN SYNC"]]}},
+  "Space": {key: 4, scale: "Minor", prog: "Minor: i–VI–VII–i", bpm: 128, swing: 0, lanes: ["Space", "Space", "Space", "Space"],
+    roll: {scale: ["Minor", "Dorian", "Phrygian"], bpm: [124, 134], swing: [0], sounds: [["SID DIGI KIT", "SIMMONS KIT"], ["MONEY BASS", "BODY HEAT"], ["LASER ARP", "TWINKLE", "CRYSTAL ARP"], ["GHOSTCAR", "CYBER LEAD", "XALAN SYNC"]]}},
+  "Miami": {key: 2, scale: "Phrygian", prog: "Phrygian: i–II", bpm: 128, swing: 2, lanes: ["Miami", "Miami", "Miami", "Miami"],
+    roll: {scale: ["Phrygian", "Minor"], bpm: [124, 134], swing: [1, 2, 3], sounds: [["808 BOOM", "808 KIT"], ["808 ROLL"], ["TWINKLE", "CRYSTAL ARP", "SYNC ARP"], ["XALAN SYNC", "CYBER LEAD", "SYNDRUM PEW"]]}},
+  "Goth": {key: 4, scale: "Harmonic minor", prog: "Harmonic minor: i–VI–iv–V", bpm: 116, swing: 0, lanes: ["Goth", "Goth", "Goth", "Goth"],
+    roll: {scale: ["Harmonic minor", "Minor", "Phrygian"], bpm: [108, 122], swing: [0], sounds: [["SIMMONS KIT", "SIMMONS BIG", "SID DIGI KIT"], ["1986 BASS", "CASCO SUB", "BODY HEAT"], ["SYNC ARP", "LASER ARP", "CRYSTAL ARP"], ["VELVET STRINGS", "STOP PULSE"]]}},
+  "Disco": {key: 0, scale: "Major", prog: "Major: I–V–vi–IV", bpm: 120, swing: 0, lanes: ["Disco", "Disco", "Disco", "Disco"],
+    roll: {scale: ["Major", "Mixolydian", "Dorian"], bpm: [116, 124], swing: [0, 1], sounds: [["SID DIGI KIT", "SIMMONS KIT"], ["BODY HEAT", "MONEY BASS"], ["TWINKLE", "CRYSTAL ARP"], ["HI-NRG BRASS", "CYBER LEAD"]]}},
+  "Trap": {key: 7, scale: "Minor", prog: "Minor: i–VI", bpm: 140, swing: 0, lanes: ["Trap", "Trap", "Trap", "Trap"],
+    roll: {scale: ["Minor", "Phrygian", "Harmonic minor"], bpm: [136, 150], swing: [0, 0, 1], sounds: [["808 KIT", "808 BOOM"], ["808 ROLL"], ["LASER ARP", "TWINKLE"], ["STOP PULSE", "VELVET STRINGS", "HI-NRG BRASS"]]}},
+};
 
-$("vibe").innerHTML = `<option value=""></option>`;
+$("vibe").innerHTML = `<option value="">Pick a vibe…</option>` + Object.keys(VIBES).map(k => `<option>${k}</option>`).join("");
 $("vibe").addEventListener("change", () => { const v = VIBES[$("vibe").value]; if (v) applyVibe(v); });
 $("dice").addEventListener("click", () => {     /* inside the picked vibe (its scales, chords, tempo, patterns, sounds), else anything */
   const pick = a => a[Math.floor(Math.random() * a.length)], vb = VIBES[$("vibe").value], r = vb && vb.roll;
   const all = {scale: Object.keys(I.SCALES)};
-  const lanes = null;   /* the dice leaves your notes alone */
+  const lanes = null;   /* the dice leaves the notes alone (the vibe's patterns stay) */
   const scale = pick(r ? r.scale : all.scale), prog = pick(I.progsFor(scale));
   const v = {key: Math.floor(Math.random() * 12), scale, prog,
     bpm: r ? r.bpm[0] + 2 * Math.floor(Math.random() * ((r.bpm[1] - r.bpm[0]) / 2 + 1)) : 112 + 2 * Math.floor(Math.random() * 15),
     swing: pick(r ? r.swing : [0, 0, 0, 1, 2, 4]), lanes,
-    sounds: KINDS.map(k => pick(I.SOUNDS[k]).name)};   /* Gen keeps the vibe's lead sounds */
+    sounds: KINDS.map((k, t) => pick(r && r.sounds[t] ? r.sounds[t] : I.SOUNDS[k].map(x => x.name)))};   /* Gen keeps the vibe's lead sounds */
   applyVibe(v);
 });
 function applyVibe(v) {

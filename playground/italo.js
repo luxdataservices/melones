@@ -577,15 +577,84 @@ function mutateMelody(steps, seed) {        /* one to three notes up or down the
   }
   return s;
 }
-/* the lanes start empty: each pattern gets built one by one (the old ones are in the repo's history); Gen writes a
- * fresh lead melody when it's picked */
+/* STOCK PATTERNS, one a vibe a lane (named for the vibe), four bars, written over A minor like everything (the scale
+ * and the chords move them). Empty first: a lane to build on. */
 const empty = () => new Array(64).fill(null);
+const bars4 = (...b) => [].concat(...b.map(x => bar(x)));            /* four one-bar lists -> 64 steps */
+function gothBars() {        /* darkwave: kick 1 and the & of 3, a hard backbeat, 8th hats, a Simmons tom run in bar 4 */
+  const s = [];
+  for (let bar = 0; bar < 4; bar++) for (let b = 0; b < 16; b++) {
+    const n = [];
+    if (b === 0 || b === 10 || (bar % 2 && b === 7)) n.push(K);
+    if (b === 4 || b === 12) n.push(SN);
+    if (bar === 3 && b >= 12) n.push(b < 14 ? TH : TL); else if (b % 2 === 0) n.push(HC);
+    s.push(b === 4 || b === 12 ? acc(n) : n);
+  }
+  return s;
+}
+const SPARK = (a, b) => Array.from({length: b - a + 1}, (_, k) => [a + k, [69, 72, 76, 81, 84, 88, 93, 96][k % 8]]);
 const LANE = {
-  drums: [{name: "Empty", sound: "SID DIGI KIT", steps: empty}],
-  bass: [{name: "Empty", sound: "BODY HEAT", steps: empty}],
-  arp: [{name: "Empty", sound: "CRYSTAL ARP", steps: empty}],
-  lead: [{name: "Empty", sound: "GHOSTCAR", steps: empty},
-         {name: "Gen", sound: "GHOSTCAR", steps: () => genMelody(Math.floor(Math.random() * 4294967296))}]
+  drums: [
+    {name: "Empty", sound: "SID DIGI KIT", steps: empty},
+    {name: "Italo", sound: "SID DIGI KIT", steps: () => italoBar()},
+    {name: "Space", sound: "SID DIGI KIT", steps: () => [...spacerBar(0), ...spacerBar(1)]},
+    {name: "Miami", sound: "808 BOOM", steps: () => miamiBar()},
+    {name: "Goth", sound: "SIMMONS KIT", steps: gothBars},
+    {name: "Disco", sound: "SID DIGI KIT", steps: discoBars},
+    {name: "Trap", sound: "808 KIT", steps: () => [...trapBar(0), ...trapBar(1), ...trapBar(0), ...trapBar(2)]}
+  ],
+  bass: [
+    {name: "Empty", sound: "BODY HEAT", steps: empty},
+    /* the Italo gallop: the root, then its octave twice, every beat */
+    {name: "Italo", sound: "BODY HEAT", steps: () => bar([0, 4, 8, 12].flatMap(b => [[b, 33, 2], [b + 2, 45, 1], [b + 3, 45, 1]]))},
+    /* space: driving octave 8ths, climbing in bar 4 */
+    {name: "Space", sound: "MONEY BASS", steps: () => { const o = [0, 2, 4, 6, 8, 10, 12, 14].map((st, k) => [st, k % 2 ? 45 : 33, 1]);
+      return bars4(o, o, o, o.slice(0, 4).concat([[8, 45, 1], [10, 47, 1], [12, 48, 1], [14, 52, 1]])); }},
+    /* Miami: long 808s on the kicks, sliding, an octave jump in bar 4 */
+    {name: "Miami", sound: "808 ROLL", steps: () => bars4([[0, 33, 7], [7, 33, 3, 1], [10, 36, 6]], [[0, 33, 3], [3, 33, 7, 1], [10, 31, 1], [11, 31, 5, 1]],
+      [[0, 33, 7], [7, 33, 3, 1], [10, 36, 6]], [[0, 33, 6, 1], [6, 45, 4, 1], [10, 40, 6, 1]])},
+    /* goth: post-punk 8ths on the root, walking up to the fifth at the end */
+    {name: "Goth", sound: "1986 BASS", steps: () => { const r = [0, 2, 4, 6, 8, 10, 12, 14].map(st => [st, 33, 1]);
+      return bars4(r, r, r, r.slice(0, 6).concat([[12, 40, 1], [14, 43, 1]])); }},
+    /* disco: the octave bounce, root on the beat, octave on the &, a pickup into bars 3 and the top */
+    {name: "Disco", sound: "BODY HEAT", steps: () => { const o = [0, 2, 4, 6, 8, 10, 12, 14].map((st, k) => [st, k % 2 ? 45 : 33, 1]);
+      return bars4(o, o.concat([[15, 43, 1]]), o, o.concat([[13, 40, 1], [15, 43, 1]])); }},
+    /* trap: a long 808 on the root, sliding up the octave late in the bar */
+    {name: "Trap", sound: "808 ROLL", steps: () => bars4([[0, 33, 10, 1], [10, 45, 6]], [[0, 33, 6], [6, 33, 4, 1], [10, 40, 6]],
+      [[0, 33, 10, 1], [10, 45, 6]], [[0, 33, 3], [3, 33, 3], [6, 33, 4, 1], [10, 45, 3, 1], [13, 43, 3]])}
+  ],
+  arp: [
+    {name: "Empty", sound: "CRYSTAL ARP", steps: empty},
+    {name: "Italo", sound: "CRYSTAL ARP", steps: () => arp4([[13, 76], [14, 81], [15, 84]], [[10, 76], [11, 81], [12, 84], [13, 88], [14, 84], [15, 93]])},
+    {name: "Space", sound: "LASER ARP", steps: () => { const d = [93, 88, 84, 81, 76, 72, 69, 64];   /* falling cascades */
+      return arp4(d.map((n, k) => [8 + k, n]), d.concat(d).map((n, k) => [k, n])); }},
+    {name: "Miami", sound: "TWINKLE", steps: () => arp4([[6, 69], [7, 81], [14, 69], [15, 81]], [[2, 69], [3, 81], [6, 69], [7, 81], [10, 69], [11, 81], [14, 81], [15, 93]])},
+    {name: "Goth", sound: "SYNC ARP", steps: () => { const c = [69, 72, 76, 81, 76, 72, 69, 64];   /* the chord broken in slow 8ths */
+      const o = c.map((n, k) => [k * 2, n]); return arp4(o, o, o); }},
+    {name: "Disco", sound: "TWINKLE", steps: () => arp4([[14, 81], [15, 84]], SPARK(8, 15), SPARK(8, 15))},
+    {name: "Trap", sound: "LASER ARP", steps: () => arp4([[15, 81]], [[8, 69], [9, 72], [10, 76], [11, 81], [12, 84], [13, 88], [14, 93], [15, 96]])}
+  ],
+  lead: [
+    {name: "Empty", sound: "GHOSTCAR", steps: empty},
+    {name: "Gen", sound: "GHOSTCAR", steps: () => genMelody(Math.floor(Math.random() * 4294967296))},
+    /* Italo: a sung hook, its answer, the hook, then home */
+    {name: "Italo", sound: "CYBER LEAD", steps: () => { const h = [[0, 76, 2], [2, 76, 1], [3, 74, 1], [4, 72, 2], [6, 71, 2], [8, 72, 4], [12, 69, 4]];
+      return bars4(h, [[0, 76, 2], [2, 76, 1], [3, 74, 1], [4, 72, 2], [6, 74, 2], [8, 76, 6], [14, 74, 2]], h, [[0, 72, 2], [2, 71, 2], [4, 69, 4], [8, 64, 4], [12, 69, 4]]); }},
+    /* space: the Ghostcar riff, 8ths stepping down, a flick at the end */
+    {name: "Space", sound: "GHOSTCAR", steps: () => { const r = [[0, 71, 2], [2, 69, 2], [4, 67, 2], [6, 64, 2], [8, 71, 2], [10, 69, 2], [12, 67, 2], [14, 74, 1], [15, 71, 1]];
+      return bars4(r, r, r, r.slice(0, 6).concat([[12, 69, 4]])); }},
+    /* Miami: a clipped sync call, answered in bar 4 */
+    {name: "Miami", sound: "XALAN SYNC", steps: () => { const c = [[4, 69, 1], [6, 72, 1], [7, 69, 1], [12, 67, 1], [14, 69, 2]];
+      return bars4(c, c, c, [[4, 76, 1], [6, 74, 1], [7, 72, 1], [10, 71, 1], [12, 69, 4]]); }},
+    /* goth: the chord held under it all, a bar each */
+    {name: "Goth", sound: "VELVET STRINGS", steps: () => bars4([[0, A, 16]], [[0, A, 16]], [[0, A, 16]], [[0, A, 16]])},
+    /* disco: brass stabs on the off-beats, a push into the top */
+    {name: "Disco", sound: "HI-NRG BRASS", steps: () => { const st = [[2, A, 1], [6, A, 1], [10, A, 1], [14, A, 1]];
+      return bars4(st, st, st, [[2, A, 1], [6, A, 1], [10, A, 1], [12, A, 1], [13, A, 1], [14, [60, 64, 69], 2]]); }},
+    /* trap: a slow dark bell line */
+    {name: "Trap", sound: "STOP PULSE", steps: () => { const b1 = [[0, 76, 3], [3, 74, 1], [4, 72, 6], [10, 69, 2], [12, 72, 4]];
+      return bars4(b1, [[0, 76, 3], [3, 77, 1], [4, 76, 4], [8, 74, 4], [12, 72, 4]], b1, [[0, 72, 4], [4, 71, 4], [8, 69, 8]]); }}
+  ]
 };
 /* scenes: which lanes play */
 const SCENES = [
