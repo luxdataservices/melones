@@ -637,9 +637,9 @@ const LANE = {
   lead: [
     {name: "Empty", sound: "GHOSTCAR", steps: empty},
     {name: "Gen", sound: "GHOSTCAR", steps: () => genMelody(Math.floor(Math.random() * 4294967296))},
-    /* Italo: a sung hook, its answer, the hook, then home */
-    {name: "Italo", sound: "CYBER LEAD", steps: () => { const h = [[0, 76, 2], [2, 76, 1], [3, 74, 1], [4, 72, 2], [6, 71, 2], [8, 72, 4], [12, 69, 4]];
-      return bars4(h, [[0, 76, 2], [2, 76, 1], [3, 74, 1], [4, 72, 2], [6, 74, 2], [8, 76, 6], [14, 74, 2]], h, [[0, 72, 2], [2, 71, 2], [4, 69, 4], [8, 64, 4], [12, 69, 4]]); }},
+    /* Italo: a hook that repeats its note, leaps to the fifth and falls back syncopated; bar 4 answers from the octave */
+    {name: "Italo", sound: "CYBER LEAD", steps: () => { const h = [[0, 69, 1], [2, 69, 1], [3, 72, 2], [5, 76, 2], [7, 74, 1], [8, 72, 2], [10, 71, 2], [12, 72, 2], [14, 69, 2]];
+      return bars4(h, h.slice(0, 7).concat([[8, 72, 2], [10, 74, 2], [12, 76, 2], [14, 74, 2]]), h, [[0, 81, 2], [2, 79, 1], [3, 76, 2], [5, 74, 2], [7, 72, 1], [8, 71, 4], [12, 69, 4]]); }},
     /* space: the Ghostcar riff, 8ths stepping down, a flick at the end */
     {name: "Space", sound: "GHOSTCAR", steps: () => { const r = [[0, 71, 2], [2, 69, 2], [4, 67, 2], [6, 64, 2], [8, 71, 2], [10, 69, 2], [12, 67, 2], [14, 74, 1], [15, 71, 1]];
       return bars4(r, r, r, r.slice(0, 6).concat([[12, 69, 4]])); }},
@@ -648,9 +648,9 @@ const LANE = {
       return bars4(c, c, c, [[4, 76, 1], [6, 74, 1], [7, 72, 1], [10, 71, 1], [12, 69, 4]]); }},
     /* goth: the chord held under it all, a bar each */
     {name: "Goth", sound: "VELVET STRINGS", steps: () => bars4([[0, A, 16]], [[0, A, 16]], [[0, A, 16]], [[0, A, 16]])},
-    /* disco: brass stabs on the off-beats, a push into the top */
-    {name: "Disco", sound: "HI-NRG BRASS", steps: () => { const st = [[2, A, 1], [6, A, 1], [10, A, 1], [14, A, 1]];
-      return bars4(st, st, st, [[2, A, 1], [6, A, 1], [10, A, 1], [12, A, 1], [13, A, 1], [14, [60, 64, 69], 2]]); }},
+    /* disco: string hits on the off-beats and an octave run up into the top (pulse strings, no horn) */
+    {name: "Disco", sound: "STOP PULSE", steps: () => { const st = [[2, A, 1], [6, A, 2], [10, A, 1], [14, A, 2]];
+      return bars4(st, st, st, [[2, A, 1], [6, A, 1], [8, 69, 1], [9, 72, 1], [10, 76, 1], [11, 81, 1], [12, 84, 1], [13, 88, 1], [14, 93, 2]]); }},
     /* trap: a slow dark bell line */
     {name: "Trap", sound: "STOP PULSE", steps: () => { const b1 = [[0, 76, 3], [3, 74, 1], [4, 72, 6], [10, 69, 2], [12, 72, 4]];
       return bars4(b1, [[0, 76, 3], [3, 77, 1], [4, 76, 4], [8, 74, 4], [12, 72, 4]], b1, [[0, 72, 4], [4, 71, 4], [8, 69, 8]]); }}

@@ -304,6 +304,7 @@ async function load() {
   w.w_arpquant(1); applySwing();
   loadSection(2, true); applyArpSync();
   buildFx(); buildTabs(); buildLanes(); refreshSecs(); buildKeys(); selectTrack(3); status2();
+  $("vibe").value = "Italo"; applyVibe(VIBES.Italo);   /* it opens playing Italo */
 }
 function err(m) { const e = $("err"); e.textContent = m; e.style.display = "block"; }
 
@@ -363,7 +364,7 @@ function evolve() {
       const sl = document.querySelector(`.lane select[data-t="${t}"]:not(.live)`); if (sl) sl.value = k;
       said.push(NAMES[t].split(" ")[0] + " " + P(t).name);
     } else if (what === "sound") {
-      const t = 1 + Math.floor(Math.random() * 3), pool = (r && r.sounds[t] ? r.sounds[t] : I.SOUNDS[KINDS[t]].map(x => x.name)).filter(n => n !== loaded[t]);
+      const t = 1 + Math.floor(Math.random() * 3), pool = (r && r.sounds[t] ? r.sounds[t] : I.SOUNDS[KINDS[t]].map(x => x.name)).filter(n => n !== loaded[t] && n !== "HI-NRG BRASS");
       if (!pool.length) continue;
       const n = pick(pool); ensureSound(t, n, true); if (t === 2) applyArpSync(); said.push(n);
       if (t === sel) buildSound();
@@ -890,18 +891,18 @@ function buildProgs(keep) {                  /* keep: the id (or its place in th
 $("prog").addEventListener("change", () => { I.setProg($("prog").value); progOff = 0; I.setProgOff(0); writeTrack(0); for (let t = 1; t < 4; t++) { writeTrack(t); $("g" + t).innerHTML = gridHtml(t); } lastPh = []; kickToBar(Math.max(0, progBar)); status2(); });
 const VIBES = {   /* a vibe: its key, scale, chords, tempo, swing and its own stock pattern on every lane; the dice keeps
                    the patterns and rolls the rest inside the vibe */
-  "Italo": {key: 9, scale: "Minor", prog: "Minor: i–VI–III–VII", bpm: 122, swing: 0, lanes: ["Italo", "Italo", "Italo", "Italo"],
+  "Italo": {mix: [{lv: 100, cu: 127, rs: 0, hi: 127, cr: 0}, {lv: 96, dk: 90, cr: 0, wp: 20, wr: 2}, {lv: 80, cr: 20, ar: 1, ag: 40}, {lv: 88, dk: 40, cr: 0}], key: 9, scale: "Minor", prog: "Minor: i–VI–III–VII", bpm: 122, swing: 0, lanes: ["Italo", "Italo", "Italo", "Italo"],
     roll: {scale: ["Minor", "Dorian"], bpm: [116, 126], swing: [0, 0, 1], sounds: [["SID DIGI KIT", "SID CRUNCH", "SIMMONS KIT"], ["BODY HEAT", "MONEY BASS", "1986 BASS"], ["CRYSTAL ARP", "TWINKLE", "LASER ARP"], ["CYBER LEAD", "GHOSTCAR", "XALAN SYNC"]]}},
-  "Space": {key: 4, scale: "Minor", prog: "Minor: i–VI–VII–i", bpm: 128, swing: 0, lanes: ["Space", "Space", "Space", "Space"],
+  "Space": {mix: [{lv: 100, cu: 116, rs: 24, hi: 127, cr: 0}, {lv: 92, dk: 100, cr: 0, wp: 28, wr: 3}, {lv: 84, cr: 40, ar: 2, ag: 30}, {lv: 84, dk: 50, cr: 0}], key: 4, scale: "Minor", prog: "Minor: i–VI–VII–i", bpm: 128, swing: 0, lanes: ["Space", "Space", "Space", "Space"],
     roll: {scale: ["Minor", "Dorian", "Phrygian"], bpm: [124, 134], swing: [0], sounds: [["SID DIGI KIT", "SIMMONS KIT"], ["MONEY BASS", "BODY HEAT"], ["LASER ARP", "TWINKLE", "CRYSTAL ARP"], ["GHOSTCAR", "CYBER LEAD", "XALAN SYNC"]]}},
-  "Miami": {key: 2, scale: "Phrygian", prog: "Phrygian: i–II", bpm: 128, swing: 2, lanes: ["Miami", "Miami", "Miami", "Miami"],
+  "Miami": {mix: [{lv: 110, cu: 127, rs: 0, hi: 110, cr: 0}, {lv: 110, dk: 0, cr: 0, wp: 0, wr: 2}, {lv: 70, cr: 0, ar: 1, ag: 50}, {lv: 80, dk: 30, cr: 0}], key: 2, scale: "Phrygian", prog: "Phrygian: i–II", bpm: 128, swing: 2, lanes: ["Miami", "Miami", "Miami", "Miami"],
     roll: {scale: ["Phrygian", "Minor"], bpm: [124, 134], swing: [1, 2, 3], sounds: [["808 BOOM", "808 KIT"], ["808 ROLL"], ["TWINKLE", "CRYSTAL ARP", "SYNC ARP"], ["XALAN SYNC", "CYBER LEAD", "SYNDRUM PEW"]]}},
-  "Goth": {key: 4, scale: "Harmonic minor", prog: "Harmonic minor: i–VI–iv–V", bpm: 116, swing: 0, lanes: ["Goth", "Goth", "Goth", "Goth"],
+  "Goth": {mix: [{lv: 96, cu: 100, rs: 40, hi: 127, cr: 0}, {lv: 96, dk: 70, cr: 0, wp: 10, wr: 1}, {lv: 76, cr: 30, ar: 0, ag: 60}, {lv: 78, dk: 90, cr: 0}], key: 4, scale: "Harmonic minor", prog: "Harmonic minor: i–VI–iv–V", bpm: 116, swing: 0, lanes: ["Goth", "Goth", "Goth", "Goth"],
     roll: {scale: ["Harmonic minor", "Minor", "Phrygian"], bpm: [108, 122], swing: [0], sounds: [["SIMMONS KIT", "SIMMONS BIG", "SID DIGI KIT"], ["1986 BASS", "CASCO SUB", "BODY HEAT"], ["SYNC ARP", "LASER ARP", "CRYSTAL ARP"], ["VELVET STRINGS", "STOP PULSE"]]}},
-  "Disco": {key: 0, scale: "Major", prog: "Major: I–V–vi–IV", bpm: 120, swing: 0, lanes: ["Disco", "Disco", "Disco", "Disco"],
-    roll: {scale: ["Major", "Mixolydian", "Dorian"], bpm: [116, 124], swing: [0, 1], sounds: [["SID DIGI KIT", "SIMMONS KIT"], ["BODY HEAT", "MONEY BASS"], ["TWINKLE", "CRYSTAL ARP"], ["HI-NRG BRASS", "CYBER LEAD"]]}},
-  "Trap": {key: 7, scale: "Minor", prog: "Minor: i–VI", bpm: 140, swing: 0, lanes: ["Trap", "Trap", "Trap", "Trap"],
-    roll: {scale: ["Minor", "Phrygian", "Harmonic minor"], bpm: [136, 150], swing: [0, 0, 1], sounds: [["808 KIT", "808 BOOM"], ["808 ROLL"], ["LASER ARP", "TWINKLE"], ["STOP PULSE", "VELVET STRINGS", "HI-NRG BRASS"]]}},
+  "Disco": {mix: [{lv: 100, cu: 127, rs: 0, hi: 127, cr: 0}, {lv: 100, dk: 80, cr: 0, wp: 16, wr: 2}, {lv: 72, cr: 0, ar: 1, ag: 35}, {lv: 86, dk: 60, cr: 0}], key: 0, scale: "Major", prog: "Major: I–V–vi–IV", bpm: 120, swing: 0, lanes: ["Disco", "Disco", "Disco", "Disco"],
+    roll: {scale: ["Major", "Mixolydian", "Dorian"], bpm: [116, 124], swing: [0, 1], sounds: [["SID DIGI KIT", "SIMMONS KIT"], ["BODY HEAT", "MONEY BASS"], ["TWINKLE", "CRYSTAL ARP"], ["STOP PULSE", "CYBER LEAD", "VELVET STRINGS"]]}},
+  "Trap": {mix: [{lv: 108, cu: 127, rs: 0, hi: 127, cr: 0}, {lv: 112, dk: 0, cr: 0, wp: 0, wr: 2}, {lv: 70, cr: 50, ar: 2, ag: 30}, {lv: 76, dk: 20, cr: 0}], key: 7, scale: "Minor", prog: "Minor: i–VI", bpm: 140, swing: 0, lanes: ["Trap", "Trap", "Trap", "Trap"],
+    roll: {scale: ["Minor", "Phrygian", "Harmonic minor"], bpm: [136, 150], swing: [0, 0, 1], sounds: [["808 KIT", "808 BOOM"], ["808 ROLL"], ["LASER ARP", "TWINKLE"], ["STOP PULSE", "VELVET STRINGS", "GHOSTCAR"]]}},
 };
 
 $("vibe").innerHTML = `<option value="">Pick a vibe…</option>` + Object.keys(VIBES).map(k => `<option>${k}</option>`).join("");
@@ -914,7 +915,7 @@ $("dice").addEventListener("click", () => {     /* inside the picked vibe (its s
   const v = {key: Math.floor(Math.random() * 12), scale, prog,
     bpm: r ? r.bpm[0] + 2 * Math.floor(Math.random() * ((r.bpm[1] - r.bpm[0]) / 2 + 1)) : 112 + 2 * Math.floor(Math.random() * 15),
     swing: pick(r ? r.swing : [0, 0, 0, 1, 2, 4]), lanes,
-    sounds: KINDS.map((k, t) => pick(r && r.sounds[t] ? r.sounds[t] : I.SOUNDS[k].map(x => x.name)))};   /* Gen keeps the vibe's lead sounds */
+    sounds: KINDS.map((k, t) => pick(r && r.sounds[t] ? r.sounds[t] : I.SOUNDS[k].map(x => x.name).filter(n => n !== "HI-NRG BRASS")))};   /* no corny horn */   /* Gen keeps the vibe's lead sounds */
   applyVibe(v);
 });
 function applyVibe(v) {
@@ -925,7 +926,21 @@ function applyVibe(v) {
   swing.g = v.swing; applySwing();
   if (!v.lanes) v.sounds.forEach((n, t) => ensureSound(t, n, true));
   (v.lanes || []).forEach((name, t) => { const k = I.LANE[KINDS[t]].findIndex(p => p.name === name); if (k >= 0) { preset[t] = k; const p = P(t); laneSteps[t] = I.to64(p.steps()).map(cp); laneOrig[t] = laneSteps[t].map(cp); ensureSound(t, v.sounds ? v.sounds[t] : p.sound, true); writeTrack(t); } });
+  if (v.mix) applyMix(v.mix);
   buildLanes(); buildSound(); buildFx(); status2();
+}
+/* a vibe's lane settings: level, duck, CUT RND; the drums' CUTOFF, RESO, HIGHS; the bass's warp; the arp's rate and gate */
+function applyMix(m) {
+  m.forEach((x, t) => {
+    if (x.lv !== undefined) w.w_tset(t, ID.P_LEVEL, x.lv);
+    if (x.dk !== undefined) { fxState.duck[t] = x.dk; w.w_duck(t, x.dk); }
+    if (x.cr !== undefined) { cutRnd[t] = x.cr; w.w_lpchaos(t, x.cr); }
+    swing.lane[t] = 0;
+    if (t === 0) { dlp.cut = x.cu ?? 127; dlp.res = x.rs ?? 0; dlp.hi = x.hi ?? 127; w.w_lp(0, dlp.cut, dlp.res); w.w_highs(0, dlp.hi); lastDrumPat = P(0).name; }
+    if (t === 1 && x.wp !== undefined) { warp.depth = x.wp; warp.rate = x.wr ?? warp.rate; applyWarp(); }
+    if (t === 2 && x.ar !== undefined) { arpSync.rate = x.ar; arpSync.gate = x.ag ?? arpSync.gate; applyArpSync(); }
+  });
+  applySwing();
 }
 const SCALE_MOODS = {"Minor": "😢", "Major": "😊", "Dorian": "😎", "Phrygian": "😈", "Lydian": "😇", "Mixolydian": "😏", "Harmonic minor": "😨", "Melodic minor": "🤔"};
 $("scale").innerHTML = Object.keys(I.SCALES).map(k => `<option value="${k}">${SCALE_MOODS[k] || ""} ${k}</option>`).join("");
