@@ -146,6 +146,8 @@ input[type=text]{font:16px Rubik,system-ui,sans-serif;min-height:44px;border-rad
   #sheet .row,#sheet label.bpm{display:flex!important;flex-wrap:wrap;gap:8px;margin:6px 0}#sheet .screen{display:flex!important;margin-top:8px}
   #sheet .fx,#sheet .panel{margin:0}
 }
+.kptabs{display:none}
+@media(max-width:820px){.lane>.kpages{position:relative}.lane>.kpages .kpt{display:none}.kptabs{grid-column:1/-1;display:flex;gap:4px;margin:0}.kpb{flex:1;min-height:28px;border:0;border-radius:3px;background:#3a3733;color:#cfc7bb;font:600 12px "Share Tech Mono",monospace;letter-spacing:.12em}.kpb.on{background:var(--acc,#d9822b);color:#1b1a18}}
 </style>
 <style>
 /* CRUMAR: a crusty late-70s Italian panel. Worn beige backdrop; black matte panel between walnut end cheeks;
@@ -517,6 +519,18 @@ document.addEventListener("click", e => {
   if (b.dataset.b === "f") { follow = !follow; showPage(pageBar); } else { follow = false; showPage(+b.dataset.b); }
 });
 let wasPaged = null; addEventListener("resize", () => { if (paged() !== wasPaged) { wasPaged = paged(); if (pageBar * 16 >= LENP()) pageBar = 0; showPage(pageBar); } });
+/* phones: the knob pages side by side; the page buttons jump to one and light the one in view */
+document.addEventListener("click", e => {
+  const b = e.target.closest && e.target.closest(".kpb"); if (!b) return;
+  const lane = b.closest(".lane"), kp = lane.querySelector(".kpages"), pg = kp.querySelectorAll(".kpage")[+b.dataset.i];
+  kp.scrollTo({left: pg.offsetLeft, behavior: "smooth"});   /* .kpages is positioned: offsets are inside it */
+  for (const x of lane.querySelectorAll(".kpb")) x.classList.toggle("on", x === b);
+});
+document.addEventListener("scroll", e => {
+  const kp = e.target; if (!kp.classList || !kp.classList.contains("kpages")) return;
+  const i = Math.round(kp.scrollLeft / Math.max(1, kp.clientWidth + 8)), lane = kp.closest(".lane");
+  if (lane) lane.querySelectorAll(".kpb").forEach((x, k) => x.classList.toggle("on", k === i));
+}, true);
 function buildTabs() {
   $("tabs").innerHTML = [0, 1, 2, 3].map(t => `<button class="tab${t === sel ? " on" : ""}" data-t="${t}" role="tab" aria-selected="${t === sel}"><span><span class="led" id="led${t}"></span> ${NAMES[t].replace(" / PAD", "")}</span><span class="ms"><i class="m${mutes[t] ? " on" : ""}" data-t="${t}" role="button" aria-label="Mute ${NAMES[t]}">M</i><i class="s${solos[t] ? " on" : ""}" data-t="${t}" role="button" aria-label="Solo ${NAMES[t]}">S</i></span></button>`).join("");
   for (const b of $("tabs").querySelectorAll(".tab")) b.addEventListener("click", e => {
@@ -560,6 +574,7 @@ function buildLanes() {
         <div class="b"><button class="kb${t === sel ? " on" : ""}" data-t="${t}">Keys</button><button class="mute${mutes[t] ? " on" : ""}" data-t="${t}" aria-pressed="${!!mutes[t]}">Mute</button><button class="solo${solos[t] ? " on" : ""}" data-t="${t}" aria-pressed="${!!solos[t]}">Solo</button></div>
 </div>
       <div class="gwrap">${pagesHtml()}<div class="gridwrap"${stepsOn[t] ? "" : ' style="opacity:.35"'}><div class="grid ${t ? "mel roll" : ""}" id="g${t}" style="grid-template-columns:${gridCols()}">${gridHtml(t)}</div></div></div>
+      <div class="kptabs" role="tablist" aria-label="Knob pages">${PAGES.map(([n], i) => `<button class="kpb${i ? "" : " on"}" data-i="${i}" role="tab">${n}</button>`).join("")}</div>
       <div class="kpages">${PAGES.map(([n, ks]) => pageHtml(n, ks)).join("")}</div></div>`;
   }).join("");
   laneKnobs.forEach(bindKnob);
