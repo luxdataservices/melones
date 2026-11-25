@@ -182,7 +182,7 @@ function spacerBar(bar2) {
     if ([0, 7, 8, 10].includes(b)) n.push(K);
     if (b === 4 || b === 12) n.push(SN, CL);
     else if (bar2 && (b === 10 || b === 14)) n.push(CL);
-    n.push(HC);                                                   /* hats on every 16th */
+    if (b % 2 === 0) n.push(HC);                                  /* 8th hats */
     s.push(b === 4 || b === 12 || (bar2 && (b === 10 || b === 14)) ? acc(n) : n);   /* the backbeats, and bar 2's baps */
   }
   return s;
@@ -485,21 +485,21 @@ function discoBars() {
     if (b % 4 === 0 || b === 7) n.push(K);
     if (b === 4 || b === 12) n.push(SN, CL);
     if (bar === 3 && b >= 13) n.push(SN);
-    n.push(b % 4 === 2 ? HO : HC);
+    if (bar === 3 && b === 14) n.push(HO); else if (b % 2 === 0) n.push(HC);   /* 8th hats, one open hat to turn the loop */
     s.push(b === 4 || b === 12 || b % 4 === 2 ? acc(n) : n);
   }
   return s;
 }
 function italoBar() {                       /* four on the floor, snare + clap on 2 and 4, 16th hats, open hats off the beat */
   const s = [];
-  for (let b = 0; b < 16; b++) { const n = []; if (b % 4 === 0) n.push(K); if (b === 4 || b === 12) n.push(SN, CL); n.push(b % 4 === 2 ? HO : HC); s.push(b % 4 === 0 ? acc(n) : n); }
+  for (let b = 0; b < 16; b++) { const n = []; if (b % 4 === 0) n.push(K); if (b === 4 || b === 12) n.push(SN, CL); if (b % 2 === 0) n.push(HC); s.push(b % 4 === 0 ? acc(n) : n); }   /* 8th closed hats, no open hats */
   return s;
 }
 function miamiBar() {                       /* Miami bass: the 808's boom on 1, the a of 2 and the & of 3; claps on 2 and 4; 16th hats; a cowbell */
   const s = [];
   for (let b = 0; b < 16; b++) {
     const n = []; if ([0, 7, 10].includes(b)) n.push(K); if (b === 4 || b === 12) n.push(CL, SN);
-    if (b === 3 || b === 11) n.push(56); n.push(b === 14 ? HO : HC);
+    if (b === 3 || b === 11) n.push(56); if (b % 2 === 0) n.push(HC);
     s.push(b === 4 || b === 12 ? acc(n) : n);
   }
   return s;
@@ -596,63 +596,63 @@ const SPARK = (a, b) => Array.from({length: b - a + 1}, (_, k) => [a + k, [69, 7
 const LANE = {
   drums: [
     {name: "Empty", sound: "SID DIGI KIT", steps: empty},
-    {name: "Italo", sound: "SID DIGI KIT", steps: () => italoBar()},
-    {name: "Space", sound: "SID DIGI KIT", steps: () => [...spacerBar(0), ...spacerBar(1)]},
-    {name: "Miami", sound: "808 BOOM", steps: () => miamiBar()},
-    {name: "Goth", sound: "SIMMONS KIT", steps: gothBars},
-    {name: "Disco", sound: "SID DIGI KIT", steps: discoBars},
-    {name: "Trap", sound: "808 KIT", steps: () => [...trapBar(0), ...trapBar(1), ...trapBar(0), ...trapBar(2)]}
+    {name: "Neon", sound: "SID DIGI KIT", steps: () => italoBar()},
+    {name: "Cosmic", sound: "SID DIGI KIT", steps: () => [...spacerBar(0), ...spacerBar(1)]},
+    {name: "Booty", sound: "808 BOOM", steps: () => miamiBar()},
+    {name: "Crypt", sound: "SIMMONS KIT", steps: gothBars},
+    {name: "Glitter", sound: "SID DIGI KIT", steps: discoBars},
+    {name: "Boom", sound: "808 KIT", steps: () => [...trapBar(0), ...trapBar(1), ...trapBar(0), ...trapBar(2)]}
   ],
   bass: [
     {name: "Empty", sound: "BODY HEAT", steps: empty},
     /* the Italo gallop: the root, then its octave twice, every beat */
-    {name: "Italo", sound: "BODY HEAT", steps: () => bar([0, 4, 8, 12].flatMap(b => [[b, 33, 2], [b + 2, 45, 1], [b + 3, 45, 1]]))},
+    {name: "Neon", sound: "BODY HEAT", steps: () => bar([0, 4, 8, 12].flatMap(b => [[b, 33, 2], [b + 2, 45, 1], [b + 3, 45, 1]]))},
     /* space: driving octave 8ths, climbing in bar 4 */
-    {name: "Space", sound: "MONEY BASS", steps: () => { const o = [0, 2, 4, 6, 8, 10, 12, 14].map((st, k) => [st, k % 2 ? 45 : 33, 1]);
+    {name: "Cosmic", sound: "MONEY BASS", steps: () => { const o = [0, 2, 4, 6, 8, 10, 12, 14].map((st, k) => [st, k % 2 ? 45 : 33, 1]);
       return bars4(o, o, o, o.slice(0, 4).concat([[8, 45, 1], [10, 47, 1], [12, 48, 1], [14, 52, 1]])); }},
     /* Miami: long 808s on the kicks, sliding, an octave jump in bar 4 */
-    {name: "Miami", sound: "808 ROLL", steps: () => bars4([[0, 33, 7], [7, 33, 3, 1], [10, 36, 6]], [[0, 33, 3], [3, 33, 7, 1], [10, 31, 1], [11, 31, 5, 1]],
+    {name: "Booty", sound: "808 ROLL", steps: () => bars4([[0, 33, 7], [7, 33, 3, 1], [10, 36, 6]], [[0, 33, 3], [3, 33, 7, 1], [10, 31, 1], [11, 31, 5, 1]],
       [[0, 33, 7], [7, 33, 3, 1], [10, 36, 6]], [[0, 33, 6, 1], [6, 45, 4, 1], [10, 40, 6, 1]])},
     /* goth: post-punk 8ths on the root, walking up to the fifth at the end */
-    {name: "Goth", sound: "1986 BASS", steps: () => { const r = [0, 2, 4, 6, 8, 10, 12, 14].map(st => [st, 33, 1]);
+    {name: "Crypt", sound: "1986 BASS", steps: () => { const r = [0, 2, 4, 6, 8, 10, 12, 14].map(st => [st, 33, 1]);
       return bars4(r, r, r, r.slice(0, 6).concat([[12, 40, 1], [14, 43, 1]])); }},
     /* disco: the octave bounce, root on the beat, octave on the &, a pickup into bars 3 and the top */
-    {name: "Disco", sound: "BODY HEAT", steps: () => { const o = [0, 2, 4, 6, 8, 10, 12, 14].map((st, k) => [st, k % 2 ? 45 : 33, 1]);
+    {name: "Glitter", sound: "BODY HEAT", steps: () => { const o = [0, 2, 4, 6, 8, 10, 12, 14].map((st, k) => [st, k % 2 ? 45 : 33, 1]);
       return bars4(o, o.concat([[15, 43, 1]]), o, o.concat([[13, 40, 1], [15, 43, 1]])); }},
     /* trap: a long 808 on the root, sliding up the octave late in the bar */
-    {name: "Trap", sound: "808 ROLL", steps: () => bars4([[0, 33, 10, 1], [10, 45, 6]], [[0, 33, 6], [6, 33, 4, 1], [10, 40, 6]],
+    {name: "Boom", sound: "808 ROLL", steps: () => bars4([[0, 33, 10, 1], [10, 45, 6]], [[0, 33, 6], [6, 33, 4, 1], [10, 40, 6]],
       [[0, 33, 10, 1], [10, 45, 6]], [[0, 33, 3], [3, 33, 3], [6, 33, 4, 1], [10, 45, 3, 1], [13, 43, 3]])}
   ],
   arp: [
     {name: "Empty", sound: "CRYSTAL ARP", steps: empty},
-    {name: "Italo", sound: "CRYSTAL ARP", steps: () => arp4([[13, 76], [14, 81], [15, 84]], [[10, 76], [11, 81], [12, 84], [13, 88], [14, 84], [15, 93]])},
-    {name: "Space", sound: "LASER ARP", steps: () => { const d = [93, 88, 84, 81, 76, 72, 69, 64];   /* falling cascades */
+    {name: "Neon", sound: "CRYSTAL ARP", steps: () => arp4([[13, 64], [14, 69], [15, 72]], [[10, 64], [11, 69], [12, 72], [13, 76], [14, 72], [15, 81]])},
+    {name: "Cosmic", sound: "LASER ARP", steps: () => { const d = [93, 88, 84, 81, 76, 72, 69, 64];   /* falling cascades */
       return arp4(d.map((n, k) => [8 + k, n]), d.concat(d).map((n, k) => [k, n])); }},
-    {name: "Miami", sound: "TWINKLE", steps: () => arp4([[6, 69], [7, 81], [14, 69], [15, 81]], [[2, 69], [3, 81], [6, 69], [7, 81], [10, 69], [11, 81], [14, 81], [15, 93]])},
-    {name: "Goth", sound: "SYNC ARP", steps: () => { const c = [69, 72, 76, 81, 76, 72, 69, 64];   /* the chord broken in slow 8ths */
+    {name: "Booty", sound: "TWINKLE", steps: () => arp4([[6, 69], [7, 81], [14, 69], [15, 81]], [[2, 69], [3, 81], [6, 69], [7, 81], [10, 69], [11, 81], [14, 81], [15, 93]])},
+    {name: "Crypt", sound: "SYNC ARP", steps: () => { const c = [57, 60, 64, 69, 64, 60, 57, 52];   /* the chord broken in slow 8ths, low */
       const o = c.map((n, k) => [k * 2, n]); return arp4(o, o, o); }},
-    {name: "Disco", sound: "TWINKLE", steps: () => arp4([[14, 81], [15, 84]], SPARK(8, 15), SPARK(8, 15))},
-    {name: "Trap", sound: "LASER ARP", steps: () => arp4([[15, 81]], [[8, 69], [9, 72], [10, 76], [11, 81], [12, 84], [13, 88], [14, 93], [15, 96]])}
+    {name: "Glitter", sound: "TWINKLE", steps: () => arp4([[14, 81], [15, 84]], SPARK(8, 15), SPARK(8, 15))},
+    {name: "Boom", sound: "LASER ARP", steps: () => arp4([[15, 81]], [[8, 69], [9, 72], [10, 76], [11, 81], [12, 84], [13, 88], [14, 93], [15, 96]])}
   ],
   lead: [
     {name: "Empty", sound: "GHOSTCAR", steps: empty},
     {name: "Gen", sound: "GHOSTCAR", steps: () => genMelody(Math.floor(Math.random() * 4294967296))},
     /* Italo: a hook that repeats its note, leaps to the fifth and falls back syncopated; bar 4 answers from the octave */
-    {name: "Italo", sound: "CYBER LEAD", steps: () => { const h = [[0, 69, 1], [2, 69, 1], [3, 72, 2], [5, 76, 2], [7, 74, 1], [8, 72, 2], [10, 71, 2], [12, 72, 2], [14, 69, 2]];
-      return bars4(h, h.slice(0, 7).concat([[8, 72, 2], [10, 74, 2], [12, 76, 2], [14, 74, 2]]), h, [[0, 81, 2], [2, 79, 1], [3, 76, 2], [5, 74, 2], [7, 72, 1], [8, 71, 4], [12, 69, 4]]); }},
+    {name: "Neon", sound: "CYBER LEAD", steps: () => { const h = [[0, 57, 1], [2, 57, 1], [3, 60, 2], [5, 64, 2], [7, 62, 1], [8, 60, 2], [10, 59, 2], [12, 60, 2], [14, 57, 2]];
+      return bars4(h, h.slice(0, 7).concat([[8, 60, 2], [10, 62, 2], [12, 64, 2], [14, 62, 2]]), h, [[0, 69, 2], [2, 67, 1], [3, 64, 2], [5, 62, 2], [7, 60, 1], [8, 59, 4], [12, 57, 4]]); }},
     /* space: the Ghostcar riff, 8ths stepping down, a flick at the end */
-    {name: "Space", sound: "GHOSTCAR", steps: () => { const r = [[0, 71, 2], [2, 69, 2], [4, 67, 2], [6, 64, 2], [8, 71, 2], [10, 69, 2], [12, 67, 2], [14, 74, 1], [15, 71, 1]];
+    {name: "Cosmic", sound: "GHOSTCAR", steps: () => { const r = [[0, 71, 2], [2, 69, 2], [4, 67, 2], [6, 64, 2], [8, 71, 2], [10, 69, 2], [12, 67, 2], [14, 74, 1], [15, 71, 1]];
       return bars4(r, r, r, r.slice(0, 6).concat([[12, 69, 4]])); }},
     /* Miami: a clipped sync call, answered in bar 4 */
-    {name: "Miami", sound: "XALAN SYNC", steps: () => { const c = [[4, 69, 1], [6, 72, 1], [7, 69, 1], [12, 67, 1], [14, 69, 2]];
+    {name: "Booty", sound: "XALAN SYNC", steps: () => { const c = [[4, 69, 1], [6, 72, 1], [7, 69, 1], [12, 67, 1], [14, 69, 2]];
       return bars4(c, c, c, [[4, 76, 1], [6, 74, 1], [7, 72, 1], [10, 71, 1], [12, 69, 4]]); }},
     /* goth: the chord held under it all, a bar each */
-    {name: "Goth", sound: "VELVET STRINGS", steps: () => bars4([[0, A, 16]], [[0, A, 16]], [[0, A, 16]], [[0, A, 16]])},
+    {name: "Crypt", sound: "VELVET STRINGS", steps: () => { const lo = A.map(n => n - 12); return bars4([[0, lo, 16]], [[0, lo, 16]], [[0, lo, 16]], [[0, lo, 16]]); }},
     /* disco: string hits on the off-beats and an octave run up into the top (pulse strings, no horn) */
-    {name: "Disco", sound: "STOP PULSE", steps: () => { const st = [[2, A, 1], [6, A, 2], [10, A, 1], [14, A, 2]];
+    {name: "Glitter", sound: "STOP PULSE", steps: () => { const st = [[2, A, 1], [6, A, 2], [10, A, 1], [14, A, 2]];
       return bars4(st, st, st, [[2, A, 1], [6, A, 1], [8, 69, 1], [9, 72, 1], [10, 76, 1], [11, 81, 1], [12, 84, 1], [13, 88, 1], [14, 93, 2]]); }},
     /* trap: a slow dark bell line */
-    {name: "Trap", sound: "STOP PULSE", steps: () => { const b1 = [[0, 76, 3], [3, 74, 1], [4, 72, 6], [10, 69, 2], [12, 72, 4]];
+    {name: "Boom", sound: "STOP PULSE", steps: () => { const b1 = [[0, 76, 3], [3, 74, 1], [4, 72, 6], [10, 69, 2], [12, 72, 4]];
       return bars4(b1, [[0, 76, 3], [3, 77, 1], [4, 76, 4], [8, 74, 4], [12, 72, 4]], b1, [[0, 72, 4], [4, 71, 4], [8, 69, 8]]); }}
   ]
 };
